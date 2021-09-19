@@ -1,0 +1,23 @@
+.c-panZoomPanelViewer {
+    display: block;
+    overflow: clip;
+    position: relative;
+    background: url('../../public/assets/map-panel-bg.png');
+    height: 100%;
+    width: 100%;
+    overflow-x: clip;
+    overflow-y: clip;
+    cursor: grab;
+
+    &.f-mousedown {
+        cursor: 'grabbing';
+    }
+    
+    > .cc-canvas {
+        position: relative;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+}
