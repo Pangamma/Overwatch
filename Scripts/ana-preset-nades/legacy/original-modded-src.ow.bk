@@ -17,18 +17,15 @@ settings
 	{
 		Skirmish
 		{
-			enabled maps
-			{
-				Junkertown
-			}
-		}
-
-		General
-		{
 			Hero Limit: Off
 			Kill Feed: Off
 			Limit Roles: 2 Of Each Role Per Team
 			Respawn Time Scalar: 50%
+
+			enabled maps
+			{
+				Junkertown
+			}
 		}
 	}
 
@@ -1335,8 +1332,8 @@ rule("[sub] final hud")
 		"B'(t) definition"
 		Create HUD Text(Local Player.hudhide_bool ? Null : Local Player, Null, Custom String("Proj Speed"), Distance Between(2 * (
 			1 - Local Player.chasecam_t) * (Local Player.proj_p1 - Local Player.proj_p0) + 2 * Local Player.chasecam_t * (
-			Local Player.proj_p2 - Local Player.proj_p1), Vector(0, 0, 0)) / Local Player.proj_simtime, Left, 100.100, Color(White), Color(
-			White), Color(White), Visible To and String, Default Visibility);
+			Local Player.proj_p2 - Local Player.proj_p1), 0 * Up) / Local Player.proj_simtime, Left, 100.100, Color(White), Color(White),
+			Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Local Player.hudhide_bool ? Null : Local Player, Null, Custom String("land_pos_t / ray_cast_t"), String("{0}, {1}",
 			Local Player.proj_predict_land_t, Local Player.ray_cast_t), Left, 101, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
@@ -1515,14 +1512,14 @@ rule("freecam_movement_loop")
 	actions
 	{
 		If(Event Player.poslock_bool);
-			Event Player.freecam_accel = Vector(0, 0, 0);
+			Event Player.freecam_accel = 0 * Up;
 		Else;
 			"get controls"
 			Event Player.freecam_accel = Throttle Of(Event Player) + Up * Is Button Held(Event Player, Button(Jump)) + Down * Is Button Held(
 				Event Player, Button(Crouch));
 		End;
 		"normalize if non-zero vector"
-		If(Event Player.freecam_accel != Vector(0, 0, 0));
+		If(Event Player.freecam_accel != 0 * Up);
 			Event Player.freecam_accel = Normalize(Event Player.freecam_accel);
 			"transform the accel to local space"
 			Event Player.freecam_accel = X Component Of(Event Player.freecam_accel) * World Vector Of(Left, Event Player, Rotation)
@@ -1531,13 +1528,13 @@ rule("freecam_movement_loop")
 			"add accel to vel"
 			Event Player.freecam_vel += 0.090 * Event Player.freecam_accel;
 			"if norm(vel) > 1"
-			If(Distance Between(Vector(0, 0, 0), Event Player.freecam_vel) > 1);
+			If(Distance Between(0 * Up, Event Player.freecam_vel) > 1);
 				Event Player.freecam_vel = Normalize(Event Player.freecam_vel);
 			End;
 		"no accel, decel"
 		Else;
-			If(Distance Between(Vector(0, 0, 0), Event Player.freecam_vel) < 0.080);
-				Event Player.freecam_vel = Vector(0, 0, 0);
+			If(Distance Between(0 * Up, Event Player.freecam_vel) < 0.080);
+				Event Player.freecam_vel = 0 * Up;
 			Else;
 				Event Player.freecam_vel -= 0.060 * Event Player.freecam_vel;
 			End;

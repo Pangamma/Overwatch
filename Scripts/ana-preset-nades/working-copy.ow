@@ -52,10 +52,79 @@ settings
 	}
 }
 
+variables
+{
+	global:
+		0: data
+		3: heroList
+		4: heroData
+		100: _FX
+}
+
 disabled rule("S E T U P")
 {
 	event
 	{
 		Ongoing - Global;
+	}
+}
+
+rule("init")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Disable Inspector Recording;
+		"sphere,shaft 1.053046257,ringout 1.052807897,ringin 1.062128122"
+		Global._FX = Array(1.016, 1.053, 1.053, 1.062);
+		Global.heroList = Array(Hero(Ana), Hero(Junkrat), Hero(Baptiste), Hero(Orisa), Hero(Zarya), Hero(Sombra), Hero(Ashe), Hero(Tracer),
+			Hero(Cassidy), Hero(Mei), Hero(Torbjörn), Hero(Hanzo), Hero(Sigma), Hero(Widowmaker));
+		Global.heroData = Array();
+		"Ana"
+		Global.heroData[0] = Array(Array(Null, Null, Null, Null, Array(-9.840, 30, 0, 7, 0, 0, 0.350, False)), 4, Array(4, 0, 0), False);
+		"Junkrat"
+		Global.heroData[1] = Array(Array(Array(-12.350, 25, 0.075, 7, 0, 0, 0.100, False), Null, Null, Array(-20.300, 25, 0.090, 7, 0,
+			0.136, 0.250, False), Array(-20.200, 10, 0.095, 7, 0, 0, 0.250, False)), 0, Array(2, 3, 0), True);
+		"Baptiste"
+		Global.heroData[2] = Array(Array(Null, Array(-20.100, 60, 0.007, 7, 0, 0, 0.100, False), Null, Null, Array(-20.100, 60, 0.007, 7,
+			0, 0, 0.100, False)), 1, Array(3, 0, 6.500), True);
+		"Orisa"
+		Global.heroData[3] = Array(Array(Null, Null, Null, Null, Array(-9.840, 25, 0, 7, 0, 0.128, 0.400, False)), 4, Array(0, 0, 0),
+			True);
+		"Zarya"
+		Global.heroData[4] = Array(Array(Null, Array(-9.840, 25, 0.100, 7, 0, 0, 0.500, False), Array(-9.840, 25, 0.100, 7, 0, 0, 0.500,
+			False), Null, Null), 1, Array(2.500, 6, 0), False);
+		"Sombra"
+		Global.heroData[5] = Array(Array(Null, Null, Null, Null, Array(-20.200, 25, 0.090, 5, 0, 0.096, 0.200, False)), 4, Array(15, 0, 0),
+			True);
+		"Ashe"
+		Global.heroData[6] = Array(Array(Null, Null, Null, Null, Array(-8.030, 25, 0.070, 7, 0, 0.140, 0.400, False)), 4, Array(5, 0, 0),
+			True);
+		"Tracer"
+		Global.heroData[7] = Array(Array(Null, Null, Array(-30.800, 15, 0.190, 2, 0, 0.144, 0.150, False), Null, Null), 2, Array(5, 0, 0),
+			False);
+		"Cassidy"
+		Global.heroData[8] = Array(Array(Null, Null, Array(-10, 4.200, 0.577, 4, 0, 0, 0.300, False), Null, Array(-9.840, 30, 0, 0.233, 0,
+			0, 0.100, False)), 4, Array(3, 0, 0), False);
+		"Mei"
+		Global.heroData[9] = Array(Array(Null, Null, Array(-9.900, 20, 0.090, 7, 0, 0.484, 0.600, False), Null, Null), 2, Array(10, 0, 0),
+			False);
+		"Torbjörn"
+		Global.heroData[10] = Array(Array(Array(-9.810, 70, 0.015, 15, 0, 0, 0.100, True), Null, Array(-30.050, 40, 0, 5, 0, 0, 0.100,
+			True), Array(-20, 17, 0, 4, 0, 0.048, 0.100, True), Null), 0, Array(2.500, 40, 0), True);
+		"Hanzo"
+		Global.heroData[11] = Array(Array(Array(-9.815, 110, 0, 15, 0, 0, 0.032, True), Null, Null, Null, Array(-9.815, 110, 0, 15, 0, 0,
+			0.032, True)), 0, Array(0, 9, 0), False);
+		"Sigma"
+		Global.heroData[12] = Array(Array(Array(-5.954, 49.700, 0, 0.429, 0, 0, 0.048, False), Null, Null, Null, Array(-18.350, 37.400,
+			0.100, 6, 0, 0.640, 0.256, False)), 4, Array(2.500, 3, 0), True);
+		"Widowmaker"
+		Global.heroData[13] = Array(Array(Null, Null, Null, Null, Array(-9.840, 20, 0, 7, 0, 0.192, 0.160, False)), 4, Array(3, 0, 0),
+			True);
+		Global.data = Array(Global.heroList, Global.heroData);
 	}
 }
