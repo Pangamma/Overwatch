@@ -144,7 +144,7 @@ rule("init")
 		"sphere,shaft 1.053046257,ringout 1.052807897,ringin 1.062128122"
 		Global._FX = Array(10155.377 / 10000, 10530.462 / 10000, 10528.079 / 10000, 10621.281 / 10000);
 		Global.data = Array(Array(Hero(Ana), Hero(Junkrat), Hero(Baptiste), Hero(Orisa), Hero(Zarya), Hero(Sombra), Hero(Ashe), Hero(
-			Tracer), Hero(McCree), Hero(Mei), Hero(Torbjörn), Hero(Hanzo), Hero(Sigma), Hero(Widowmaker)), Array(Array(Array(Null, Null,
+			Tracer), Hero(Cassidy), Hero(Mei), Hero(Torbjörn), Hero(Hanzo), Hero(Sigma), Hero(Widowmaker)), Array(Array(Array(Null, Null,
 			Null, Null, Array(-9.840, 30, 0, 7, 0, 0, 0.350, False)), 4, Array(4, 0, 0), False), Array(Array(Array(-12.350, 25, 0.075, 7,
 			0, 0, 0.100, False), Null, Null, Array(-20.300, 25, 0.090, 7, 0, 0.136, 0.250, False), Array(-20.200, 10, 0.095, 7, 0, 0,
 			0.250, False)), 0, Array(2, 3, 0), True), Array(Array(Null, Array(-20.100, 60, 0.007, 7, 0, 0, 0.100, False), Null, Null,
@@ -1641,7 +1641,7 @@ rule("McCree: HIGH NOON")
 	{
 		Ongoing - Each Player;
 		All;
-		McCree;
+		Cassidy;
 	}
 
 	conditions
@@ -1661,7 +1661,7 @@ rule("McCree: NOT HIGH NOON")
 	{
 		Ongoing - Each Player;
 		All;
-		McCree;
+		Cassidy;
 	}
 
 	conditions
