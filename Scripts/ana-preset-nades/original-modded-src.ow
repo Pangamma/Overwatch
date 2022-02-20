@@ -17,15 +17,18 @@ settings
 	{
 		Skirmish
 		{
-			Hero Limit: Off
-			Kill Feed: Off
-			Limit Roles: 2 Of Each Role Per Team
-			Respawn Time Scalar: 50%
-
 			enabled maps
 			{
 				Junkertown
 			}
+		}
+
+		General
+		{
+			Hero Limit: Off
+			Kill Feed: Off
+			Limit Roles: 2 Of Each Role Per Team
+			Respawn Time Scalar: 50%
 		}
 	}
 

@@ -32,6 +32,14 @@ settings
 		}
 	}
 
+	heroes
+	{
+		General
+		{
+			Ability Cooldown Time: 0%
+		}
+	}
+
 	extensions
 	{
 		Beam Effects
@@ -41,5 +49,13 @@ settings
 		Energy Explosion Effects
 		Kinetic Explosion Effects
 		Play More Effects
+	}
+}
+
+disabled rule("S E T U P")
+{
+	event
+	{
+		Ongoing - Global;
 	}
 }
