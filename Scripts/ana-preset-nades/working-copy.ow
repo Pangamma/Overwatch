@@ -1,5 +1,11 @@
 settings
 {
+	main
+	{
+		Description: "MULTIPLAYER ENABLED. By Pangamma. Last Update: 2022-02-20"
+		Mode Name: "Preset nade finder"
+	}
+
 	lobby
 	{
 		Allow Players Who Are In Queue: Yes
@@ -10,41 +16,19 @@ settings
 
 	modes
 	{
-		Assault
+		Skirmish
 		{
-			Limit Roles: 2 Of Each Role Per Team
-
 			enabled maps
 			{
+				Eichenwalde
 			}
 		}
 
-		Control
+		General
 		{
-			Limit Roles: 2 Of Each Role Per Team
-
-			enabled maps
-			{
-			}
-		}
-
-		Escort
-		{
-			Limit Roles: 2 Of Each Role Per Team
-
-			enabled maps
-			{
-				Dorado
-			}
-		}
-
-		Hybrid
-		{
-			Limit Roles: 2 Of Each Role Per Team
-
-			enabled maps
-			{
-			}
+			Hero Limit: Off
+			Kill Feed: Off
+			Respawn Time Scalar: 10%
 		}
 	}
 
