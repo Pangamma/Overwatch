@@ -52,8 +52,12 @@ namespace OverwatchStatTracker
                             _logger.LogInformation("Overwatch stopped. About to log stats to the service.");
                             await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
                             // Send updates to overwatch stat tracker api
-                            string heroes = "ashe,bastion,genji,hanzo,junkrat,mccree,mei,pharah,reaper,soldier76,sombra,symmetra,torbjorn,tracer,widowmaker,echo,ana,baptiste,lucio,mercy,zenyatta,moira,brigitte,dVa,orisa,reinhardt,roadhog,winston,zarya";
+                            string heroes = "ana,baptiste,lucio,mercy,zenyatta,moira,brigitte";
+                            // heroes += ",ashe,bastion,genji,hanzo,junkrat,mccree,mei,pharah,reaper,soldier76,sombra,symmetra,torbjorn,tracer,widowmaker,echo";
+                            // heroes += ",dVa,orisa,reinhardt,roadhog,winston,zarya";
+
                             await apiService.SendUpdates("Pangamma-1859", heroes);
+                            await apiService.SendUpdates("Pangamma-11779", heroes);
                             await apiService.SendUpdates("Deiya-11707", heroes);
                             await Task.Delay(TimeSpan.FromSeconds(60), stoppingToken);
                             continue;
