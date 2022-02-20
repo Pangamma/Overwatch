@@ -1,0 +1,61 @@
+settings
+{
+	lobby
+	{
+		Allow Players Who Are In Queue: Yes
+		Match Voice Chat: Enabled
+		Max Spectators: 6
+		Max Team 2 Players: 0
+	}
+
+	modes
+	{
+		Assault
+		{
+			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+			}
+		}
+
+		Control
+		{
+			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+			}
+		}
+
+		Escort
+		{
+			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+				Dorado
+			}
+		}
+
+		Hybrid
+		{
+			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+			}
+		}
+	}
+
+	extensions
+	{
+		Beam Effects
+		Beam Sounds
+		Buff Status Effects
+		Debuff Status Effects
+		Energy Explosion Effects
+		Kinetic Explosion Effects
+		Play More Effects
+	}
+}
