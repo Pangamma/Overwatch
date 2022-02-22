@@ -2,4 +2,4 @@
 # if (accum.indexOf(elem) === -1)
 #     accum.push(elem);
 #     return accum;
-# }, []).map((x,i) => `${i}: ${x}`).join("\n")
+# }, []).sort((a,b) => a < b ? -1 : 1).map((x,i) => `${i}: ${x}`).join("\n")

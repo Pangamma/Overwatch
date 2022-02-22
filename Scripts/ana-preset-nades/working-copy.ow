@@ -20,7 +20,7 @@ settings
 		{
 			enabled maps
 			{
-				Eichenwalde
+				Workshop Expanse Night
 			}
 		}
 
@@ -65,61 +65,72 @@ variables
 		100: _FX
 
 	player:
-		0: heroIndex
-		1: heroProjData
-		2: heroAbilityIcon
-		3: proj_g
-		4: proj_vel
-		5: proj_del
-		6: proj_simtime
-		7: proj_r
-		8: proj_castdelay
-		9: proj_chasedelay
-		10: proj_fx
-		11: proj_warning
-		12: proj_p0
-		13: proj_p1
-		14: proj_p2
-		15: proj_apex_t
-		16: isTrajHidden
-		17: proj_dir
-		18: abilityIndex
-		19: player_hero
-		20: ray_cast_t
-		21: ray_cast_start
-		22: ray_cast_end
-		23: ray_cast_hit_pos
-		24: proj_predict_land_pos
-		25: proj_predict_land_t
-		26: posMemory
-		27: poslock_bool
-		28: poslock_posfac
+		0: abilityIndex
+		1: aimTargetPos
+		2: aim_distToIndicator
+		3: aim_fastCalcAngleRs
+		4: aim_fastCalcDx
+		5: aim_fastCalcDy
+		6: aim_fastCalcPosA
+		7: aim_fastCalcPosB
+		8: aim_indicatorPos
+		9: aim_vLinePos
+		10: aim_vLineUpperLim
+		11: chasecam_bool
+		12: chasecam_chasing
+		13: chasecam_interrupt
+		14: chasecam_t
+		15: eye_height
+		16: freecam_accel
+		17: freecam_bool
+		18: freecam_freeeye
+		19: freecam_prevdir
+		20: freecam_vel
+		21: heroAbilityIcon
+		22: heroIndex
+		23: heroProjData
+		24: isAimEnabled
+		25: isHudHidden
+		26: isTrajHidden
+		27: isTrajHidden_manual
+		28: lastProjectileHitPos
 		29: pEyePos
-		30: pFacingDirHidden
-		31: chasecam_bool
-		32: chasecam_t
-		33: chasecam_chasing
-		34: predictcam_bool
-		35: predictcam_dist
-		36: eye_height
-		37: trajlock_bool
-		38: proj_override
-		39: isTrajHidden_manual
-		40: isHudHidden
-		41: chasecam_interrupt
-		42: pFacingDir
-		43: isAimEnabled
-		44: aim_indicatorPos
-		45: aimTargetPos
-		46: aim_distToIndicator
-		47: freecam_freeeye
-		48: freecam_accel
-		49: freecam_bool
-		50: freecam_vel
-		51: freecam_prevdir
-		52: tumbleweed_highnoon_swag
-		53: lastProjectileHitPos
-		54: isTargetLocked
+		30: pFacingDir
+		31: pFacingDirHidden
+		32: player_hero
+		33: posMemory
+		34: poslock_bool
+		35: poslock_posfac
+		36: predictcam_bool
+		37: predictcam_dist
+		38: proj_apex_t
+		39: proj_castdelay
+		40: proj_chasedelay
+		41: proj_del
+		42: proj_dir
+		43: proj_fx
+		44: proj_g
+		45: proj_override
+		46: proj_p0
+		47: proj_p1
+		48: proj_p2
+		49: proj_predict_land_pos
+		50: proj_predict_land_t
+		51: proj_r
+		52: proj_simtime
+		53: proj_vel
+		54: proj_warning
+		55: ray_cast_end
+		56: ray_cast_hit_pos
+		57: ray_cast_start
+		58: ray_cast_t
+		59: trajlock_bool
+		60: tumbleweed_highnoon_swag
+		61: aim_msgAlignHoriz
+		62: aim_msgAlignVert
+		63: aim_msgStatus
+		64: aim_fastCalc_dAngle_H
+		65: aim_fastCalc_dAngle_V
 }
 
 subroutines
@@ -139,6 +150,10 @@ subroutines
 	12: unlockdir_only
 	14: initAutoAim
 	15: initHeroData
+	16: calcAimParamsFast
+	17: calcAimDxAndDy
+	18: calcAimParamsFastUpper
+	19: calcAimParamsFastLower
 }
 
 disabled rule("S E T U P")
@@ -571,7 +586,7 @@ rule("init_player")
 	{
 		Set Player Allowed Heroes(Event Player, Global.heroList);
 		Event Player.isTrajHidden = False;
-		Event Player.isTrajHidden_manual = False;
+		Event Player.isTrajHidden_manual = True;
 		Disable Game Mode HUD(Event Player);
 		Call Subroutine(initAutoAim);
 	}
@@ -597,10 +612,12 @@ rule("player_calc_proj_loop")
 	{
 		Call Subroutine(save_trajectory_origin);
 		Call Subroutine(calc_proj);
+		Call Subroutine(calcAimParamsFast);
 		Wait(0.064, Abort When False);
 		Loop If Condition Is True;
 	}
 }
+
 rule("player_changed_hero")
 {
 	event
@@ -634,7 +651,6 @@ rule("player_changed_hero")
 		Event Player.predictcam_dist = 0.800;
 		Event Player.predictcam_bool = False;
 		Event Player.isTrajHidden = False;
-		Event Player.isTrajHidden_manual = False;
 		Event Player.tumbleweed_highnoon_swag = False;
 		If(Event Player.chasecam_chasing == True);
 			Start Rule(chasecam_start, Restart Rule);
@@ -740,11 +756,14 @@ rule("[Keybind] set/unset target (interact)")
 
 	actions
 	{
-		If(Event Player.aimTargetPos == Event Player.lastProjectileHitPos);
-			Event Player.isTargetLocked = False;
+		If(Event Player.aimTargetPos == Event Player.proj_predict_land_pos);
+			Event Player.isAimEnabled = False;
+			Event Player.aimTargetPos = Vector(0,0,0);
+			Small Message(Event Player, Custom String("Aim target has been unset!"));
 		Else;
-			Event Player.isTargetLocked = True;
-			Event Player.aimTargetPos = Event Player.lastProjectileHitPos;
+			Event Player.isAimEnabled = True;
+			Event Player.aimTargetPos = Event Player.proj_predict_land_pos;
+			Small Message(Event Player, Custom String("Aim target has been set!"));
 		End;
 	}
 }
@@ -764,7 +783,9 @@ rule("[sub] loadProjData")
 		Event Player.proj_fx = Global.heroData[Event Player.heroIndex][2];
 		Event Player.proj_warning = Global.heroData[Event Player.heroIndex][3];
 		Event Player.abilityIndex = Global.heroData[Event Player.heroIndex][1];
+		
 		Call Subroutine(swap_proj_data);
+
 		disabled Event Player.proj_g = Event Player.heroProjData[Global.heroData[Event Player.heroIndex][1]][0];
 		disabled Event Player.proj_vel = Event Player.heroProjData[Global.heroData[Event Player.heroIndex][1]][1];
 		disabled Event Player.proj_del = Event Player.heroProjData[Global.heroData[Event Player.heroIndex][1]][2];
@@ -833,6 +854,7 @@ rule("[sub] load heroData")
 	}
 }
 
+
 rule("[sub] initHud")
 {
 	event
@@ -846,28 +868,55 @@ rule("[sub] initHud")
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Code: {0}", Global.mapCode), Custom String(
 			"Nade Finder Tool ({0})", Global.mapVersion), Custom String("by Pangamma"), Left, -2, Color(Yellow), Color(White), Color(Aqua),
 			Visible To, Default Visibility);
-		Create HUD Text(Local Player.isHudHidden ? Local Player : Null, Null, Null, Custom String("{0} {1}", Global.mapCode, Global.mapVersion), Left, -2, Color(
-			White), Color(White), Color(Yellow), Visible To, Default Visibility);
-		Create HUD Text(All Players(All Teams), Null, String("{0} - {1}", Entity Count, Text Count), String("{0} - {1} - {2}", Server Load,
-			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(Gray), Color(Gray), Visible To and String,
-			Default Visibility);
+		Create HUD Text(Local Player.isHudHidden ? Local Player : Null, Null, Null, Custom String("{0} {1}", Global.mapCode,
+			Global.mapVersion), Left, -2, Color(White), Color(White), Color(Yellow), Visible To, Default Visibility);
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Instructions"), Null, Null, Left, 0, Color(White),
 			Color(White), Color(White), Visible To and String, Default Visibility);
-
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Acknowledge"), Custom String(
-			"- change hero"), Left, 0.400, Color(White), Color(Turquoise), Color(White), Visible To and String, Default Visibility);
-
+		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Acknowledge"), Custom String("- change hero"),
+			Left, 0.400, Color(White), Color(Turquoise), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, String("{0} {1}", Button(Interact), String("({0})",
-			Input Binding String(Button(Interact)))), Custom String("- set/unset target position"), Left, 0.300, Color(White), Color(
-			Aqua), Color(White), Visible To and String, Default Visibility);
-
+			Input Binding String(Button(Interact)))), Custom String("- [{0}] set/unset target position",
+			Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0, 0, 0) ? Custom String("Set") : Custom String("Unset")),
+			Left, 0.300, Color(White), Color(Aqua), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Custom String("Need Healing"), Custom String("- [{0}] Toggle HUD",
 			Local Player.isHudHidden ? Custom String("Hidden") : Custom String("Visible")), Left, 0.700, Color(White), Color(Gray), Color(
 			White), Visible To and String, Default Visibility);
-
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Group Up"), Custom String(
-			"- [{0}] hide trajectory / effects", Local Player.isTrajHidden_manual ? Custom String("Hidden") : Custom String(
-			"Visible")), Left, 0.500, Color(White), Color(Lime Green), Color(White), Visible To and String, Default Visibility);
+			"- [{0}] hide trajectory / effects", Local Player.isTrajHidden_manual ? Custom String("Hidden") : Custom String("Visible")),
+			Left, 0.500, Color(White), Color(Lime Green), Color(White), Visible To and String, Default Visibility);
+		"Right aligned items."
+		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Flight Time (Approx)"),
+			Local Player.proj_simtime * Local Player.proj_predict_land_t, Right, 3.050, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
+		// Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Proj Speed"), Distance Between(2 * (
+		// 	1 - Local Player.chasecam_t) * (Local Player.proj_p1 - Local Player.proj_p0) + 2 * Local Player.chasecam_t * (
+		// 	Local Player.proj_p2 - Local Player.proj_p1), Vector(0, 0, 0)) / Local Player.proj_simtime, Right, 100.100, Color(White),
+		// 	Color(White), Color(White), Visible To and String, Default Visibility);
+
+
+		// "Experimental Personal Angle"
+		// Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Null, Custom String("Actual Angle {0}",
+		// 	0 - Vertical Facing Angle Of(Local Player)), Top, -2, Color(White), Color(White), Color(Yellow), Visible To and String,
+		// 	Default Visibility);
+		// "Experimental Recommended angle"
+		// Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Null, Custom String("Try this Angle {0}",
+		// 	Local Player.aim_fastCalcAngleRs), Top, -2, Color(White), Color(White), Color(Yellow), Visible To and String,
+		// 	Default Visibility);
+
+		"horizontal launch angle"
+		Create HUD Text(Local Player.isHudHidden || !Local Player.isAimEnabled ? Null : Local Player, Null, Custom String(
+			"Horizontal launch angle"), Local Player.aim_msgAlignHoriz, Top, -2, Color(White), Color(White), Color(Yellow),
+			Visible To and String, Default Visibility);
+
+		"vertical launch angle"
+		Create HUD Text((Local Player.isHudHidden || !Local Player.isAimEnabled ) ? Null : Local Player, Null, Custom String(
+			"Vertical   launch   angle"), Local Player.aim_msgAlignVert, Top, -4, Color(White),
+			Color(White), Color(Yellow), Visible To and String, Default Visibility);
+
+					// Create HUD Text(All Players(All Teams), Null, String("{0} - {1}", Entity Count, Text Count), String("{0} - {1} - {2}", Server Load,
+		// 	Server Load Average, Server Load Peak), Right, -1, Color(White), Color(Gray), Color(Gray), Visible To and String,
+		// 	Default Visibility);
+
 		/*
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Ultimate Status"), Custom String(
 			"- toggle chase camera"), Left, 0.050, Color(White), Color(Blue), Color(White), Visible To and String, Default Visibility);
@@ -888,10 +937,6 @@ rule("[sub] initHud")
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Stats"), Null, Null, Left, 3, Color(White), Color(
 			White), Color(White), Visible To and String, Default Visibility);
 			*/
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Flight Time (Approx)"),
-			Local Player.proj_simtime * Local Player.proj_predict_land_t, Right, 3.050, Color(White), Color(White), Color(White),
-			Visible To and String, Default Visibility);
-
 			/*
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Position"), Position Of(Local Player), Left,
 			3.100, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
@@ -903,10 +948,8 @@ rule("[sub] initHud")
 			1 - Local Player.chasecam_t) * Local Player.proj_p1 + Local Player.chasecam_t * Local Player.proj_p2)), Left, 100, Color(
 			White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"B'(t) definition"
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Proj Speed"), Distance Between(2 * (
-			1 - Local Player.chasecam_t) * (Local Player.proj_p1 - Local Player.proj_p0) + 2 * Local Player.chasecam_t * (
-			Local Player.proj_p2 - Local Player.proj_p1), Vector(0, 0, 0)) / Local Player.proj_simtime, Left, 100.100, Color(White), Color(
-			White), Color(White), Visible To and String, Default Visibility);
+		*/
+/*
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("land_pos_t / ray_cast_t"), String("{0}, {1}",
 			Local Player.proj_predict_land_t, Local Player.ray_cast_t), Left, 101, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
@@ -919,11 +962,12 @@ rule("[sub] initHud")
 			Input Binding String(Button(Jump)), Input Binding String(Button(Crouch))), Null, Null, Top, 2, Color(Red), Color(White), Color(
 			White), Visible To and String, Default Visibility);
 */
-//     Create HUD Text(Local Player.chasecam_bool ? Local Player : Null, Custom String(
+
+			/*
+			
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String(
 			"Abilities ({0})", Local Player.heroAbilityIcon), Null, Null, Top, 3, Color(Blue),
 			Color(White), Color(White), Visible To and String, Default Visibility);
-			/*
 		Create HUD Text(Local Player.proj_warning ? Local Player : Null, Custom String(
 			"NON-ZERO PROJECTILE RADIUS. TRAJECTORY MAY NOT MATCH"), Null, Null, Top, 4, Color(Red), Color(White), Color(White),
 			Visible To, Default Visibility);
@@ -1053,28 +1097,6 @@ rule("[sub] map_deathplane")
 	}
 }
 
-
-rule("Sub: initAutoAim")
-{
-	event
-	{
-		Subroutine;
-		initAutoAim;
-	}
-
-	actions
-	{
-		Event Player.aim_indicatorPos = Vector(0, 0, 0);
-		Event Player.aimTargetPos = Vector(0, 0, 0);
-		Event Player.aim_distToIndicator = 0;
-		Create Effect(Event Player.isAimEnabled ? Event Player : Null, Sphere, Color(Black), Event Player.aimTargetPos, 1,
-			Visible To Position and Radius);
-		Create Effect(Event Player.isAimEnabled ? Event Player : Null, Ring, Color(Black), Event Player.aimTargetPos, 1,
-			Visible To Position and Radius);
-	}
-}
-
-
 rule("[sub] calculate_projectile_parameters    (calc_proj)")
 {
 	event
@@ -1091,7 +1113,7 @@ rule("[sub] calculate_projectile_parameters    (calc_proj)")
 		Event Player.proj_p2 = Event Player.proj_p0 + Event Player.proj_vel * Event Player.proj_simtime * Event Player.proj_dir + 0.500 * Event Player.proj_simtime * Event Player.proj_simtime * Event Player.proj_g * Up;
 		Event Player.proj_apex_t = -1 * Y Component Of(Event Player.proj_dir)
 			* Event Player.proj_vel / Event Player.proj_g / Event Player.proj_simtime;
-		If(Host Player == Event Player);
+		If(Host Player == Event Player || True);
 			If(Event Player.proj_r == 0);
 				For Player Variable(Event Player, ray_cast_t, 0, 1, 0.002);
 					Event Player.ray_cast_start = Evaluate Once((1 - Event Player.ray_cast_t) * (1 - Event Player.ray_cast_t))
@@ -1170,5 +1192,172 @@ rule("[sub] create trajectory")
 		"cylinder range (ring)"
 		Create Effect(Local Player.isTrajHidden_manual ? Null : Local Player, Ring, Color(Blue), Local Player.proj_predict_land_pos,
 			Local Player.proj_fx[2] * Evaluate Once(Global._FX[2]), Visible To Position and Radius);
+	}
+}
+
+
+rule("Implement automatic aiming")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.isAimEnabled == True;
+	}
+
+	actions
+	{
+		Chase Player Variable At Rate(Event Player, aim_indicatorPos, Eye Position(Event Player) + Vector(5 * Sine From Degrees(
+			Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos))),
+			-5 * Tangent From Degrees(Vertical Facing Angle Of(Event Player)), 5 * Cosine From Degrees(Horizontal Angle From Direction(
+			Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos)))), 100, Destination and Rate);
+
+		Chase Player Variable At Rate(Event Player, aim_distToIndicator, Distance Between(Eye Position(Event Player),
+			Event Player.aim_indicatorPos), 100, Destination and Rate);
+
+		Chase Player Variable At Rate(Event Player, aim_vLinePos, 
+		Eye Position(Event Player) + Vector(5 * Sine From Degrees(Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos))), 0, 5 * Cosine From Degrees(Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos)))),100, Destination and Rate);
+		// Chase Player Variable At Rate(Event Player, aim_LineVy, 
+		// ... 
+		// 	,100, Destination and Rate);
+	}
+}
+
+
+rule("Sub: initAutoAim")
+{
+	event
+	{
+		Subroutine;
+		initAutoAim;
+	}
+
+	actions
+	{
+		Event Player.aim_indicatorPos = Vector(0, 0, 0);
+		Event Player.aimTargetPos = Vector(0, 0, 0);
+		Event Player.aim_distToIndicator = 0;
+		Event Player.aim_vLinePos = Vector(0, 0, 0);
+		Create Effect(Event Player.isAimEnabled ? Event Player : Null, Sphere, Color(Black), Event Player.aimTargetPos, 1,
+			Visible To Position and Radius);
+		Create Effect(Event Player.isAimEnabled ? Event Player : Null, Ring, Color(Black), Event Player.aimTargetPos, 1,
+			Visible To Position and Radius);
+
+
+		"Vertical line, 5m away"
+		Create Beam Effect(Local Player.isAimEnabled ? Local Player : Null, Torbjörn Turret Sight Beam,
+		Event Player.aim_vLinePos + Vector(0, 70, 0), Event Player.aim_vLinePos - Vector(0, 40, 0), Color(Team 2), Visible To Position and Radius);
+		// "Vertical line, 3m away"
+		// Create Beam Effect(Local Player.isAimEnabled ? Local Player : Null, Torbjörn Turret Sight Beam,
+
+		//  Eye Position(Event Player) + Vector(
+		// 	3 * Sine From Degrees(Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos))),
+		// 	70,
+		// 	3 * Cosine From Degrees(Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos)))
+		// 	),
+
+		// 	 Eye Position(Event Player) + Vector(3 * Sine From Degrees(Horizontal Angle From Direction(
+		// 	Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos))), -40, 3 * Cosine From Degrees(
+		// 	Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos)))),
+			
+		// 	 Color(Team 2), Visible To Position and Radius);
+			
+		Create Effect(Local Player.isAimEnabled ? Local Player : Null, Sphere, Distance Between(Local Player.proj_predict_land_pos, Local Player.aimTargetPos)
+				< (Local Player.proj_fx[0] * Evaluate Once(Global._FX[0]) / 2) ? Color(Rose) : Color(White), 
+				Local Player.aim_indicatorPos,
+				Local Player.aim_distToIndicator / 50, Visible To Position Radius and Color);
+	}
+}
+
+rule("[sub] calcAimParamsFast")
+{
+	event
+	{
+		Subroutine;
+		calcAimParamsFast;
+	}
+
+	actions
+	{
+		Call Subroutine(calcAimDxAndDy);
+		Call Subroutine(calcAimParamsFastUpper);
+		Call Subroutine(calcAimParamsFastLower);
+
+		// "https://stackoverflow.com/a/18048502/1582837"
+		// Event Player.aim_fastCalcAngleRs = Arctangent In Degrees(Event Player.proj_vel ^ 2 + Square Root(
+		// 	Event Player.proj_vel ^ 4 - (0 - Event Player.proj_g) * (
+		// 	(0 - Event Player.proj_g) * Event Player.aim_fastCalcDx ^ 2 + 2 * Event Player.aim_fastCalcDy * Event Player.proj_vel ^ 2)),
+		// 	(0 - Event Player.proj_g) * Event Player.aim_fastCalcDx);
+	}
+}
+
+
+rule("[sub] calcAimParamsFastUpper")
+{
+	event
+	{
+		Subroutine;
+		calcAimParamsFastUpper;
+	}
+
+	actions
+	{
+		"https://stackoverflow.com/a/18048502/1582837"
+		Event Player.aim_fastCalcAngleRs = Arctangent In Degrees(Event Player.proj_vel ^ 2 + Square Root(
+			Event Player.proj_vel ^ 4 - (0 - Event Player.proj_g) * (
+			(0 - Event Player.proj_g) * Event Player.aim_fastCalcDx ^ 2 + 2 * Event Player.aim_fastCalcDy * Event Player.proj_vel ^ 2)),
+			(0 - Event Player.proj_g) * Event Player.aim_fastCalcDx);
+	}
+}
+
+
+rule("[sub] calcAimParamsFastLower")
+{
+	event
+	{
+		Subroutine;
+		calcAimParamsFastLower;
+	}
+
+	actions
+	{
+		"https://stackoverflow.com/a/18048502/1582837"
+		Event Player.aim_fastCalcAngleRs = Arctangent In Degrees(Event Player.proj_vel ^ 2 + Square Root(
+			Event Player.proj_vel ^ 4 - (0 - Event Player.proj_g) * (
+			(0 - Event Player.proj_g) * Event Player.aim_fastCalcDx ^ 2 + 2 * Event Player.aim_fastCalcDy * Event Player.proj_vel ^ 2)),
+			(0 - Event Player.proj_g) * Event Player.aim_fastCalcDx);
+	}
+}
+
+rule("[sub] calcAimDxAndDy")
+{
+	event
+	{
+		Subroutine;
+		calcAimDxAndDy;
+	}
+
+	actions
+	{
+		"dX and dY"
+		Event Player.aim_fastCalcPosA = Event Player.pEyePos;
+		Event Player.aim_fastCalcPosB = Event Player.aimTargetPos;
+		Event Player.aim_fastCalcDy = Y Component Of(Event Player.aim_fastCalcPosB) - Y Component Of(Event Player.aim_fastCalcPosA);
+		Event Player.aim_fastCalcDx = Distance Between(Vector(X Component Of(Event Player.aim_fastCalcPosA), 0, Z Component Of(
+			Event Player.aim_fastCalcPosA)), Vector(X Component Of(Event Player.aim_fastCalcPosB), 0, Z Component Of(
+			Event Player.aim_fastCalcPosB)));
+		"Angle diff for H and V directions to target"
+		Event Player.aim_fastCalc_dAngle_H = Horizontal Angle Towards(Event Player, Event Player.aimTargetPos);
+		Event Player.aim_msgAlignHoriz = Event Player.aim_fastCalc_dAngle_H > 1 ? Custom String("{1}    {0}",
+			Event Player.aim_fastCalc_dAngle_H, Icon String(Arrow: Left)) : (Event Player.aim_fastCalc_dAngle_H < -1 ? Custom String(
+			"{1}    {0}", Event Player.aim_fastCalc_dAngle_H, Icon String(Arrow: Right)) : Icon String(Checkmark));
+		Event Player.aim_fastCalc_dAngle_V = Angle Difference(Vertical Facing Angle Of(Event Player), Event Player.aim_fastCalcAngleRs);
+		Event Player.aim_msgAlignVert = Custom String("{0}    {1} / {2}", Icon String(Diamond), 0 - Vertical Facing Angle Of(Event Player),
+			Event Player.aim_fastCalcAngleRs);
 	}
 }

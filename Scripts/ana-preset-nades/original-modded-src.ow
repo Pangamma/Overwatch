@@ -126,7 +126,7 @@ subroutines
 	1: calc_proj
 	2: swap_proj_data
 	3: init_map_deathplane_y
-	4: create_trajectory
+	4: initTrajectoryUI
 	5: check_ability1
 	6: initHud
 	7: save_trajectory_origin
@@ -172,7 +172,7 @@ rule("init")
 		// 	True), Array(Array(Null, Null, Null, Null, Array(-9.840, 20, 0, 7, 0, 0.192, 0.160, False)), 4, Array(3, 0, 0), True)));
 		Call Subroutine(init_map_deathplane_y);
 		Call Subroutine(initHud);
-		Call Subroutine(create_trajectory);
+		Call Subroutine(initTrajectoryUI);
 	}
 }
 
@@ -1232,7 +1232,7 @@ rule("[sub] create trajectory")
 	event
 	{
 		Subroutine;
-		create_trajectory;
+		initTrajectoryUI;
 	}
 
 	actions
