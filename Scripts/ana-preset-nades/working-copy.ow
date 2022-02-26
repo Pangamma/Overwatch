@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-02-22"
+		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-02-25"
 		Mode Name: "Reverse Nade Tool"
 	}
 
@@ -20,7 +20,7 @@ settings
 		{
 			enabled maps
 			{
-				Route 66
+				Blizzard World
 			}
 		}
 
@@ -29,14 +29,6 @@ settings
 			Hero Limit: Off
 			Kill Feed: Off
 			Respawn Time Scalar: 10%
-		}
-	}
-
-	heroes
-	{
-		General
-		{
-			Ability Cooldown Time: 0%
 		}
 	}
 
@@ -133,6 +125,7 @@ variables
 		65: aim_fastCalc_dAngle_V		
 		66: aim_indicatorIconIndex
 		67: proj_hitRadiusPrimary
+		68: proj_cooldowns
 
 
 		80: predictTraj_launchDir
@@ -214,7 +207,7 @@ rule("init")
 		"sphere,shaft 1.053046257,ringout 1.052807897,ringin 1.062128122"
 		Global._FX = Array(1.016, 1.053, 1.053, 1.062);
 		Global.mapCode = Custom String("M72P9V");
-		Global.mapVersion = Custom String("1.1");
+		Global.mapVersion = Custom String("1.2");
 		Call Subroutine(initHeroData);
 		Call Subroutine(initHud);
 		Call Subroutine(init_map_deathplane_y);
@@ -253,7 +246,7 @@ rule("[sub] initHud")
 	actions
 	{
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Code: {0}", Global.mapCode), Custom String(
-			"Nade Finder Tool ({0})", Global.mapVersion), Custom String("by Pangamma"), Left, -2, Color(Yellow), Color(White), Color(Aqua),
+			"Reverse Nade Tool ({0})", Global.mapVersion), Custom String("by Pangamma"), Left, -2, Color(Yellow), Color(White), Color(Aqua),
 			Visible To, Default Visibility);
 		Create HUD Text(Local Player.isHudHidden ? Local Player : Null, Null, Null, Custom String("{0} {1}", Global.mapCode,
 			Global.mapVersion), Left, -2, Color(White), Color(White), Color(Yellow), Visible To, Default Visibility);
@@ -678,10 +671,10 @@ rule("[sub] loadProjData")
 	{
 		Event Player.heroIndex = Index Of Array Value(Global.heroList, Hero Of(Event Player));
 		Event Player.heroProjData = Global.heroData[Event Player.heroIndex][0];
-		Event Player.proj_fx = Global.heroData[Event Player.heroIndex][2];
-		Event Player.proj_hitRadiusPrimary = Event Player.proj_fx[0] * Evaluate Once(Global._FX[0]);
-		Event Player.proj_warning = Global.heroData[Event Player.heroIndex][3];
 		Event Player.abilityIndex = Global.heroData[Event Player.heroIndex][1];
+		Event Player.proj_fx = Global.heroData[Event Player.heroIndex][2];
+		Event Player.proj_warning = Global.heroData[Event Player.heroIndex][3];
+		Event Player.proj_hitRadiusPrimary = Event Player.proj_fx[0] * Evaluate Once(Global._FX[0]);
 		
 		Call Subroutine(swap_proj_data);
 	}
@@ -1740,5 +1733,133 @@ rule("[sub] calcAimDxAndDy")
 		Event Player.aim_fastCalc_dAngle_V = Angle Difference(Vertical Facing Angle Of(Event Player), Event Player.aim_fastCalcAngleRs);
 		Event Player.aim_msgAlignVert = Custom String("{0}    {1} / {2}", Icon String(Diamond), 0 - Vertical Facing Angle Of(Event Player),
 			Event Player.aim_fastCalcAngleRs);
+	}
+}
+
+
+rule("[AntiCoolDowns] - Ability 1")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Ability 1)) == True;
+		Ability Cooldown(Event Player, Button(Ability 1)) > 0;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+	}
+}
+
+rule("[AntiCoolDowns] - Ability 1 (Junkrat + Tracer)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		disabled Hero Of(Event Player) == Hero(Junkrat);
+		Is Button Held(Event Player, Button(Ability 1)) == True;
+		Ability Charge(Event Player, Button(Primary Fire)) < 1;
+	}
+
+	actions
+	{
+		Set Ability Charge(Event Player, Button(Ability 1), 1);
+	}
+}
+
+rule("[AntiCoolDowns] - Ability 2")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Ability 2)) == True;
+		Ability Cooldown(Event Player, Button(Ability 2)) > 0;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+	}
+}
+
+rule("[AntiCoolDowns] - Primary Fire")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Ability Cooldown(Event Player, Button(Primary Fire)) > 0;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Primary Fire), 0);
+	}
+}
+
+rule("[AntiCoolDowns] - Secondary Fire")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Secondary Fire)) == True;
+		Ability Cooldown(Event Player, Button(Secondary Fire)) > 0;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+	}
+}
+
+rule("[AntiCoolDowns] - Jump")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Ability Cooldown(Event Player, Button(Jump)) > 0;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Jump), 0);
 	}
 }
