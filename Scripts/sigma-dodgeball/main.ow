@@ -1,0 +1,1182 @@
+settings
+{
+	main
+	{
+		Description: "The first dodgeball gamemode in Overwatch - Pug's classic Sigma Dodgeball gamemode, with an additional gamemode included - Sigma Dodgeball Charged!\r\n\r\nClassic - Barriers, Catch on Cooldown. Catching KOs the thrower, and tags a KO'ed ally back in!\r\n\r\nCharged - 2 Lives, Short Catch Cooldown. Catching charges up your throw speed!\r\n\r\nGamemode released 08/16/19. Check out discord.gg/FyMCGhE for all of Pug's gamemodes including the original COD Zombies and more!"
+		Mode Name: "Sigma Dodgeball + Charged"
+	}
+
+	lobby
+	{
+		Allow Players Who Are In Queue: Yes
+		Map Rotation: After A Game
+		Match Voice Chat: Enabled
+		Max Spectators: 12
+		Max Team 1 Players: 6
+		Max Team 2 Players: 6
+		Return To Lobby: Never
+		Team Balancing: After A Game
+	}
+
+	modes
+	{
+		Elimination
+		{
+			Capture Objective Tiebreaker: Off
+			Draw After Match Time Elapsed With No Tiebreaker: 300
+			Score To Win: 9
+			Tiebreaker After Match Time Elapsed: 300
+			Time To Capture: 7
+
+			enabled maps
+			{
+				Workshop Island
+				Workshop Island Night
+			}
+		}
+
+		disabled Skirmish
+		{
+			Limit Valid Control Points: Third
+		}
+
+		disabled Team Deathmatch
+		{
+			Score To Win: 30
+		}
+
+		General
+		{
+			Allow Hero Switching: Off
+			Enemy Health Bars: Off
+			Game Mode Start: Manual
+			Hero Limit: Off
+			Respawn As Random Hero: On
+			Spawn Health Packs: Enabled
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Sigma
+			{
+				Accretion Cooldown Time: 25%
+				Accretion Knockback Scalar: 0%
+				Damage Dealt: 10%
+				Health: 10%
+				Movement Speed: 150%
+				Projectile Gravity: 150%
+				Projectile Speed: 150%
+				Ultimate Generation - Combat Gravitic Flux: 0%
+				Ultimate Generation - Passive Gravitic Flux: 0%
+				Ultimate Generation Gravitic Flux: 10%
+			}
+
+			enabled heroes
+			{
+				Sigma
+			}
+		}
+	}
+
+	extensions
+	{
+		Buff Status Effects
+		Debuff Status Effects
+		Buff and Debuff Sounds
+		Energy Explosion Effects
+		Explosion Sounds
+		Play More Effects
+	}
+}
+
+variables
+{
+	global:
+		0: Gamemode
+		1: BoundsRadius
+
+	player:
+		0: Catching
+		1: KillCount
+		2: Ball
+		3: Resurrect
+		4: Hit
+		5: Lives
+		7: ChargeLevel
+		8: NanoEffect
+}
+
+subroutines
+{
+	0: SetChargeLevel
+}
+
+disabled rule("Debug - Create Sigma Bot")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Wait(5, Ignore Condition);
+		Create Dummy Bot(Hero(Sigma), Team 2, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+		Wait(1, Ignore Condition);
+		Teleport(Players In Slot(0, Team 2), Vector(-10, 0, 0));
+		Create Dummy Bot(Hero(Sigma), Team 2, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+		Create Dummy Bot(Hero(Sigma), Team 2, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+		Create Dummy Bot(Hero(Sigma), Team 2, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+		Create Dummy Bot(Hero(Sigma), Team 1, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+		Create Dummy Bot(Hero(Sigma), Team 1, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+		Create Dummy Bot(Hero(Sigma), Team 1, -1, Vector(-10, 0, 0), Vector(0, 0, 0));
+	}
+}
+
+disabled rule("Debug - Remove Phased Out")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+	}
+
+	actions
+	{
+		Clear Status(All Players(All Teams), Phased Out);
+	}
+}
+
+disabled rule("Debug - Sigma Bot Facing")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Start Facing(Event Player, Direction Towards(Eye Position(Event Player), Eye Position(Players In Slot(0, Team 1))), 500, To World,
+			Direction and Turn Rate);
+	}
+}
+
+disabled rule("Debug - Sigma Bot Grasp")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Players In Slot(0, Team 1)) == True;
+	}
+
+	actions
+	{
+		Wait(0.750, Ignore Condition);
+		Press Button(Event Player, Button(Ability 1));
+	}
+}
+
+disabled rule("Debug - Sigma Bot Throw")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		Slot 0;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+		Ability Cooldown(Event Player, Button(Ability 2)) == 0;
+		Is Using Ability 2(Event Player) == False;
+	}
+
+	actions
+	{
+		Press Button(Event Player, Button(Ability 2));
+		Wait(Random Real(0.250, 3), Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+disabled rule("====================================================LOBBY======================================================")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Init - Lobby Effects")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Create Effect(All Players(All Teams), Ring, Color(Turquoise), Vector(10, 0, 0), 8, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Ring, Color(Green), Vector(-10, 0, 0), 8, Visible To Position and Radius);
+		Create In-World Text(All Players(All Teams), Custom String("Sigma Dodgeball Classic"), Vector(10, 1.500, 0), 2,
+			Clip Against Surfaces, Visible To Position and String, Color(Turquoise), Default Visibility);
+		Create In-World Text(All Players(All Teams), Custom String("1 Hit KO - Cooldown on Catch - Catching Tags a Teammate Back In"),
+			Vector(10, 1, 0), 1, Clip Against Surfaces, Visible To Position and String, Color(Turquoise), Default Visibility);
+		Create In-World Text(All Players(All Teams), Custom String("Sigma Dodgeball Charged"), Vector(-10, 1.500, 0), 2,
+			Clip Against Surfaces, Visible To Position and String, Color(Green), Default Visibility);
+		Create In-World Text(All Players(All Teams), Custom String("2 Lives - No Cooldown on Catch - Catching Increases Throw Speed"),
+			Vector(-10, 1, 0), 1, Clip Against Surfaces, Visible To Position and String, Color(Green), Default Visibility);
+	}
+}
+
+rule("Spawn Players")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 0;
+		Is Alive(Event Player) == True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Vector(0, 0, 0));
+		Set Status(Event Player, Null, Invincible, 9999);
+		Set Status(Event Player, Null, Unkillable, 9999);
+		Create HUD Text(All Players(All Teams), Null, Custom String(
+			" \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n"),
+			Custom String("Group up in the gamemode you'd like to play!"), Top, 0, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
+		Set Ability 2 Enabled(Event Player, False);
+	}
+}
+
+rule("Gamemode Select - Host")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 0;
+		Number Of Players(All Teams) > 1;
+		(Distance Between(Host Player, Vector(10, 0, 0)) < 8 || Distance Between(Host Player, Vector(-10, 0, 0)) < 8) == True;
+	}
+
+	actions
+	{
+		Wait(0.100, Abort When False);
+		Destroy All Effects;
+		Destroy All In-World Text;
+		Destroy All HUD Text;
+		If((Distance Between(Host Player, Vector(10, 0, 0)) < 8) == True);
+			Global.Gamemode = 1;
+		Else If((Distance Between(Host Player, Vector(-10, 0, 0)) < 8) == True);
+			Global.Gamemode = 2;
+	}
+}
+
+disabled rule("Gamemode Select - Manual")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 0;
+		Number Of Players(All Teams) > 1;
+		(Is True For All(All Players(All Teams), Distance Between(Current Array Element, Vector(10, 0, 0)) < 8) == True || Is True For All(
+			All Players(All Teams), Distance Between(Current Array Element, Vector(-10, 0, 0)) < 8) == True) == True;
+	}
+
+	actions
+	{
+		Wait(0.100, Abort When False);
+		Destroy All Effects;
+		Destroy All In-World Text;
+		Destroy All HUD Text;
+		If(Is True For All(All Players(All Teams), Distance Between(Current Array Element, Vector(10, 0, 0)) < 8) == True);
+			Global.Gamemode = 1;
+		Else If(Is True For All(All Players(All Teams), Distance Between(Current Array Element, Vector(-10, 0, 0)) < 8) == True);
+			Global.Gamemode = 2;
+	}
+}
+
+disabled rule("Gamemode Select - Auto")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 0;
+		Number Of Players(All Teams) > 1;
+		(Is True For Any(All Players(All Teams), Distance Between(Current Array Element, Vector(10, 0, 0)) < 8) == True || Is True For Any(
+			All Players(All Teams), Distance Between(Current Array Element, Vector(-10, 0, 0)) < 8) == True) == True;
+	}
+
+	actions
+	{
+		Wait(20, Abort When False);
+		Destroy All Effects;
+		Destroy All In-World Text;
+		Destroy All HUD Text;
+		Small Message(All Players(All Teams), Custom String("Selecting Majority Vote..."));
+		If(Count Of(Players Within Radius(Vector(10, 0, 0), 8, All Teams, Off)) >= Count Of(Players Within Radius(Vector(-10, 0, 0), 8,
+			All Teams, Off)));
+			Global.Gamemode = 1;
+		Else If(Count Of(Players Within Radius(Vector(10, 0, 0), 8, All Teams, Off)) < Count Of(Players Within Radius(Vector(-10, 0, 0), 8,
+				All Teams, Off)));
+			Global.Gamemode = 2;
+	}
+}
+
+rule("Start Game")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode > 0;
+	}
+
+	actions
+	{
+		Start Game Mode;
+		Wait(0.100, Ignore Condition);
+		Destroy All Dummy Bots;
+		Create Beam Effect(All Players(All Teams), Good Beam, Vector(0, 0.050, 20), Vector(0, 0.050, -20), Color(White), Visible To);
+		Create Beam Effect(All Players(All Teams), Good Beam, Vector(0, 1, 20), Vector(0, 1, -20), Color(White), Visible To);
+		Create Effect(All Players(All Teams), Sphere, Color(Red), Vector(0, 0, 0), Global.BoundsRadius, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Ring, Color(Orange), Vector(0, 0, 0), Global.BoundsRadius - 5,
+			Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Ring, Color(Yellow), Vector(10, 0, 10), 3, Visible To);
+		Create Effect(All Players(All Teams), Ring, Color(Yellow), Vector(10, 0, -10), 3, Visible To);
+		Create Effect(All Players(All Teams), Ring, Color(Yellow), Vector(-10, 0, 10), 3, Visible To);
+		Create Effect(All Players(All Teams), Ring, Color(Yellow), Vector(-10, 0, -10), 3, Visible To);
+		Create HUD Text(All Players(All Teams), Null, Custom String(" \r\n \r\n \r\n \r\n \r\n \r\n "), Custom String(
+			"{0} Sigma Dodgeball by Pug", Ability Icon String(Hero(Sigma), Button(Ability 2))), Top, 3, Color(White), Color(Purple), Color(
+			White), Visible To and String, Visible Always);
+	}
+}
+
+rule("Skip Hero Select")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Is Assembling Heroes == True;
+	}
+
+	actions
+	{
+		Set Match Time(0.100);
+		Wait(0.110, Ignore Condition);
+		Set Match Time(8);
+	}
+}
+
+disabled rule("====================================================CLASSIC======================================================")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Classic Between Rounds")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 1;
+		Is Game In Progress == False;
+	}
+
+	actions
+	{
+		If(Team Score(Team 1) == 0 && Team Score(Team 2) == 0);
+			Wait(2, Ignore Condition);
+			Big Message(All Players(All Teams), Custom String("Sigma Dodgeball Classic"));
+		End;
+		All Players(All Teams).KillCount = 0;
+		Global.BoundsRadius = 40;
+		Clear Status(All Players(All Teams), Invincible);
+		Clear Status(All Players(All Teams), Unkillable);
+		Clear Status(All Players(All Teams), Burning);
+		Set Ability 2 Enabled(All Players(All Teams), False);
+		Set Secondary Fire Enabled(All Players(All Teams), False);
+		Set Primary Fire Enabled(All Players(All Teams), False);
+	}
+}
+
+rule("Start Classic")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 1;
+		Is Game In Progress == True;
+	}
+
+	actions
+	{
+		Set Ability 2 Enabled(All Players(All Teams), True);
+		Set Secondary Fire Enabled(All Players(All Teams), True);
+		Chase Global Variable Over Time(BoundsRadius, 0, 101, None);
+		Clear Status(All Players(All Teams), Invincible);
+		Clear Status(All Players(All Teams), Unkillable);
+		Clear Status(All Players(All Teams), Burning);
+		disabled Allow Button(All Players(All Teams), Button(Ultimate));
+	}
+}
+
+rule("Player Hit Classic")
+{
+	event
+	{
+		Player Took Damage;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 1;
+		Event Ability == Button(Ability 2);
+		Has Status(Event Player, Stunned) == True;
+	}
+
+	actions
+	{
+		If(Victim.Catching == 0);
+			Kill(Victim, Attacker);
+		Else;
+			Kill(Attacker, Victim);
+			Event Player.Catching = 0;
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Small Message(Attacker, Custom String("{0} caught your ball!", Victim));
+			If(Number Of Dead Players(Team Of(Victim)) > 0);
+				Random Value In Array(All Dead Players(Team Of(Victim))).Resurrect = Victim;
+				Play Effect(All Players(All Teams), Ring Explosion, Color(Green), Victim, 6);
+				Play Effect(All Players(All Teams), Buff Explosion Sound, Color(White), Victim, 100);
+	}
+}
+
+rule("Player Tagged Back In")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.Resurrect != Null;
+	}
+
+	actions
+	{
+		Respawn(Event Player);
+		Wait(0.100, Ignore Condition);
+		Teleport(Event Player, Event Player.Resurrect);
+		Small Message(All Players(All Teams), Custom String("{0} tagged {1} back in!", Event Player.Resurrect, Event Player));
+		Wait(0.100, Ignore Condition);
+		Event Player.Resurrect = Null;
+		Add Health Pool To Player(Event Player, Armor, 9999, True, False);
+	}
+}
+
+disabled rule("====================================================CHARGED=====================================================")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Charged Between Rounds")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+		Is Game In Progress == False;
+	}
+
+	actions
+	{
+		If(Team Score(Team 1) == 0 && Team Score(Team 2) == 0);
+			Create HUD Text(All Players(All Teams), Null, Custom String(
+				" \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n "),
+				Null, Top, 4, Color(White), Color(White), Color(White), Visible To, Default Visibility);
+			Wait(2, Ignore Condition);
+			Big Message(All Players(All Teams), Custom String("Sigma Dodgeball Charged"));
+		End;
+		Small Message(All Players(All Teams), Custom String("{0} Catch to increase throw speed!", Ability Icon String(Hero(Sigma), Button(
+			Ability 1))));
+		All Players(All Teams).KillCount = 0;
+		Global.BoundsRadius = 40;
+		Clear Status(All Players(All Teams), Invincible);
+		Clear Status(All Players(All Teams), Unkillable);
+		Clear Status(All Players(All Teams), Burning);
+		Wait(2, Ignore Condition);
+		Set Ability 2 Enabled(All Players(All Teams), False);
+		Set Primary Fire Enabled(All Players(All Teams), False);
+		Stop Forcing Player Outlines(All Players(All Teams), All Players(All Teams));
+		All Players(All Teams).ChargeLevel = 0;
+		Set Projectile Speed(All Players(All Teams), 100);
+		Set Projectile Gravity(All Players(All Teams), 100);
+		All Players(All Teams).Lives = 2;
+		disabled Set Secondary Fire Enabled(All Players(All Teams), False);
+	}
+}
+
+rule("Start Charged")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+		Is Game In Progress == True;
+	}
+
+	actions
+	{
+		Chase Global Variable Over Time(BoundsRadius, 0, 101, None);
+		Clear Status(All Players(All Teams), Invincible);
+		Clear Status(All Players(All Teams), Unkillable);
+		Clear Status(All Players(All Teams), Burning);
+		Set Ability 2 Enabled(All Players(All Teams), True);
+	}
+}
+
+rule("Player Hit Charged")
+{
+	event
+	{
+		Player Took Damage;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+		Event Ability == Button(Ability 2);
+		Has Status(Event Player, Stunned) == True;
+	}
+
+	actions
+	{
+		Attacker.Hit = 1;
+		If(Victim.Catching == 0);
+			Play Effect(All Players(All Teams), DVa Micro Missiles Explosion Sound, Color(White), Position Of(Event Player), 100);
+			If(Event Player.Lives < 2);
+				Kill(Victim, Attacker);
+			Else;
+				Remove All Health Pools From Player(Victim);
+				Add Health Pool To Player(Event Player, Shields, 5000, True, False);
+			End;
+			Event Player.Lives -= 1;
+			Victim.ChargeLevel = 0;
+			Set Projectile Speed(Victim, 100);
+			Set Projectile Gravity(Victim, 100);
+			Destroy Effect(Victim.NanoEffect);
+			Stop Forcing Player Outlines(Victim, All Players(All Teams));
+		Else;
+			Call Subroutine(SetChargeLevel);
+			Victim.Catching = 0;
+			Set Ability Cooldown(Victim, Button(Ability 2), 0);
+			Set Ability Cooldown(Victim, Button(Ability 1), 0);
+			Set Ability 2 Enabled(Victim, True);
+			Small Message(Victim, Custom String("Caught a Ball! {0}", Ability Icon String(Hero(Sigma), Button(Ability 2))));
+			Small Message(Attacker, Custom String("{0} caught your ball!", Victim));
+			Play Effect(All Players(All Teams), Moira Fade Disappear Sound, Color(White), Eye Position(Victim), 100);
+	}
+}
+
+rule("Player Throw Ball")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+		Is Using Ability 2(Event Player) == False;
+	}
+
+	actions
+	{
+		Wait(0.100, Ignore Condition);
+		Set Ability Cooldown(Event Player, Button(Ability 2), 4.500 - Event Player.ChargeLevel);
+		disabled Wait Until(Event Player.Hit == 1, 0.750);
+		disabled Skip If(Event Player.Hit == 1, 3);
+		disabled Event Player.ChargeLevel = 0;
+		disabled Set Projectile Speed(Event Player, 100);
+		disabled Set Projectile Gravity(Event Player, 100);
+		disabled Destroy Effect(Event Player.NanoEffect);
+		disabled Stop Forcing Player Outlines(Event Player, All Players(All Teams));
+		disabled Event Player.Hit = 0;
+		disabled Small Message(Event Player, Custom String("Missed! Charge Lost."));
+	}
+}
+
+rule("Set Charge Level")
+{
+	event
+	{
+		Subroutine;
+		SetChargeLevel;
+	}
+
+	actions
+	{
+		If(Victim.ChargeLevel < 4);
+			Stop Forcing Player Outlines(Victim, All Players(All Teams));
+			If(Victim.ChargeLevel < Attacker.ChargeLevel);
+				If(Attacker.ChargeLevel < 4);
+					Victim.ChargeLevel = Attacker.ChargeLevel + 1;
+				Else;
+					Victim.ChargeLevel = 4;
+				End;
+			Else;
+				Victim.ChargeLevel += 1;
+			End;
+			Wait(0.100, Ignore Condition);
+			If(Event Player.ChargeLevel < 2);
+				Start Forcing Player Outlines(Event Player, All Players(All Teams), True, Color(Yellow), Always);
+			Else If(Event Player.ChargeLevel == 2);
+				Start Forcing Player Outlines(Event Player, All Players(All Teams), True, Color(Orange), Always);
+			Else If(Event Player.ChargeLevel == 3);
+				Start Forcing Player Outlines(Event Player, All Players(All Teams), True, Color(Red), Always);
+			Else;
+				Start Forcing Player Outlines(Event Player, All Players(All Teams), True, Color(Rose), Always);
+			End;
+			Set Projectile Speed(Event Player, 100 + Event Player.ChargeLevel * 30);
+			Set Projectile Gravity(Event Player, 100 + Event Player.ChargeLevel * 30);
+	}
+}
+
+rule("Player Charge Level <3")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+		Event Player.ChargeLevel < 3;
+	}
+
+	actions
+	{
+		Destroy Effect(Event Player.NanoEffect);
+	}
+}
+
+rule("Player Charge Level >2")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+		Event Player.ChargeLevel > 2;
+	}
+
+	actions
+	{
+		If(Team Of(Event Player) == Team 1);
+			Create Effect(All Players(All Teams), Ana Nano Boosted Effect, Color(Team 1), Event Player, 1, Visible To Position and Radius);
+			Event Player.NanoEffect = Last Created Entity;
+		Else;
+			Create Effect(All Players(All Teams), Ana Nano Boosted Effect, Color(Team 2), Event Player, 1, Visible To Position and Radius);
+			Event Player.NanoEffect = Last Created Entity;
+		End;
+		Play Effect(All Players(All Teams), Ana Biotic Grenade Increased Healing Sound, Color(White), Eye Position(Event Player), 100);
+	}
+}
+
+rule("Charge HUD")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode == 2;
+	}
+
+	actions
+	{
+		Create Progress Bar HUD Text(Event Player, Event Player.ChargeLevel / 4 * 100, Custom String("Throw Speed"), Top, 5, Array(Color(
+			White), Color(Yellow), Color(Orange), Color(Red), Color(Rose))[Event Player.ChargeLevel], Array(Color(White), Color(Yellow),
+			Color(Orange), Color(Red), Color(Rose))[Event Player.ChargeLevel], Values and Color, Default Visibility);
+		Create In-World Text(All Players(All Teams), Array(Null, Icon String(Heart), Custom String("{0}{0}", Icon String(Heart)))
+			[Event Player.Lives], Event Player, 0.750, Clip Against Surfaces, Visible To Position and String, Color(Red),
+			Default Visibility);
+		Event Player.Lives = 2;
+		Create Progress Bar In-World Text(Null, Event Player.ChargeLevel / 4 * 100, Null, Update Every Frame(Eye Position(Event Player)
+			+ Up), 0.100, Clip Against Surfaces, Array(Color(White), Color(Yellow), Color(Orange), Color(Red), Color(Rose))
+			[Event Player.ChargeLevel], Null, Position Values and Color, Visible Always);
+	}
+}
+
+disabled rule("====================================================ALL GAMES======================================================")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Catching")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.Catching = 1;
+		Set Knockback Received(Event Player, 0);
+		Wait(0.250, Ignore Condition);
+		Set Knockback Received(Event Player, 100);
+		Cancel Primary Action(Event Player);
+		Wait(0.100, Ignore Condition);
+		Event Player.Catching = 0;
+		If(Global.Gamemode == 2 && Has Status(Event Player, Stunned) == False);
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0.500);
+	}
+}
+
+rule("Add Health Pools")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Is Game In Progress == False;
+	}
+
+	actions
+	{
+		Remove All Health Pools From Player(Event Player);
+		Wait(0.100, Ignore Condition);
+		Set Max Health(Event Player, 1);
+		Wait(0.250, Ignore Condition);
+		Add Health Pool To Player(Event Player, Armor, 9999, True, False);
+	}
+}
+
+rule("Remove Health Pools")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Remove All Health Pools From Player(Event Player);
+	}
+}
+
+rule("Jump Pads")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Is True For Any(Array(Vector(10, 0, 10), Vector(-10, 0, 10), Vector(10, 0, -10), Vector(-10, 0, -10)), Distance Between(
+			Current Array Element, Event Player) < 3) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 15, To World, Cancel Contrary Motion);
+		Play Effect(All Players(All Teams), Explosion Sound, Color(White), Event Player, 100);
+		Play Effect(All Players(All Teams), Good Explosion, Color(Yellow), Nearest Walkable Position(Event Player), 1);
+	}
+}
+
+rule("Out of Bounds")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Game In Progress == True;
+		Is Alive(Event Player) == True;
+		Distance Between(Vector(0, 0, 0), Event Player) > Global.BoundsRadius;
+	}
+
+	actions
+	{
+		Wait(0.500, Abort When False);
+		Kill(Event Player, Null);
+		Event Player.Ball = 0;
+		Small Message(Event Player, Custom String("Out of bounds!"));
+		If(Team Of(Event Player) == Team 1);
+			Play Effect(All Players(All Teams), DVa Self Destruct Explosion Effect, Color(Team 2), Position Of(Event Player), 1);
+			Play Effect(All Players(All Teams), DVa Self Destruct Explosion Sound, Color(Team 2), Position Of(Event Player), 100);
+		Else;
+			Play Effect(All Players(All Teams), DVa Self Destruct Explosion Effect, Color(Team 1), Position Of(Event Player), 1);
+			Play Effect(All Players(All Teams), DVa Self Destruct Explosion Sound, Color(Team 1), Position Of(Event Player), 100);
+	}
+}
+
+rule("Out of Bounds [ADD WARN]")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Game In Progress == True;
+		Is Alive(Event Player) == True;
+		Distance Between(Vector(0, 0, 0), Event Player) > Global.BoundsRadius - 5.5;
+	}
+
+	actions
+	{
+		Set Status(Event Player, Null, Burning, 9999);
+	}
+}
+
+rule("Out of Bounds [REMOVE WARN]")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Game In Progress == True;
+		Is Alive(Event Player) == True;
+		Distance Between(Vector(0, 0, 0), Event Player) <= Global.BoundsRadius - 5.5;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Burning);
+	}
+}
+
+rule("T1 Cross Sides")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 1;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode > 0;
+		X Component Of(Position Of(Event Player)) < 0;
+	}
+
+	actions
+	{
+		Kill(Event Player, Null);
+		Event Player.Ball = 0;
+		Small Message(Event Player, Custom String("Disqualified - Cross Sides"));
+	}
+}
+
+rule("T2 Cross Sides")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Global.Gamemode > 0;
+		X Component Of(Position Of(Event Player)) > 0;
+	}
+
+	actions
+	{
+		Kill(Event Player, Null);
+		Event Player.Ball = 0;
+		Small Message(Event Player, Custom String("Disqualified - Cross Sides"));
+	}
+}
+
+rule("Ultimate Charge")
+{
+	event
+	{
+		Player Dealt Final Blow;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.KillCount < 3;
+	}
+
+	actions
+	{
+		Event Player.KillCount += 1;
+		Wait(0.100, Ignore Condition);
+		Set Ultimate Charge(Event Player, 34 * Event Player.KillCount);
+	}
+}
+
+rule("Balance Team 1")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Is Game In Progress == False;
+		Number Of Players(All Teams) > 1;
+		Number Of Players(Team 1) >= Number Of Players(Team 2) + 2;
+	}
+
+	actions
+	{
+		Wait(0.250, Abort When False);
+		Move Player to Team(Random Value In Array(All Players(Team 1)), Team 2, -1);
+		Small Message(All Players(All Teams), Custom String("Balancing teams..."));
+		Loop If Condition Is True;
+	}
+}
+
+rule("Balance Team 2")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Is Game In Progress == False;
+		Number Of Players(All Teams) > 1;
+		Number Of Players(Team 2) >= Number Of Players(Team 1) + 2;
+	}
+
+	actions
+	{
+		Wait(0.250, Abort When False);
+		Move Player to Team(Random Value In Array(All Players(Team 2)), Team 1, -1);
+		Small Message(All Players(All Teams), Custom String("Balancing teams..."));
+		Loop If Condition Is True;
+	}
+}
+
+rule("Disable Proper Abilities")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Global.Gamemode > 0;
+	}
+
+	actions
+	{
+		Set Primary Fire Enabled(Event Player, False);
+		If(Is Game In Progress == False);
+			Set Ability 2 Enabled(Event Player, False);
+			disabled If(Global.Gamemode == 2);
+			disabled Set Secondary Fire Enabled(Event Player, False);
+	}
+}
+
+rule("Muted Players")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Array Contains(Array(Custom String("Fox"), Custom String("TriZEROmu")), Event Player) == True;
+	}
+
+	actions
+	{
+		Disable Voice Chat(Event Player, True, True, True);
+		Disable Text Chat(Event Player);
+		Wait Until(Has Spawned(Event Player) == True, 20);
+		Small Message(Event Player, Custom String("You have been muted in this gamemode."));
+	}
+}
+
+rule("Auto Restart")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Is Game In Progress == False;
+		Global.Gamemode > 0;
+	}
+
+	actions
+	{
+		Wait(8, Abort When False);
+		Restart Match;
+	}
+}
+
+rule("Increase Barrier Cooldown (Charged)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Game In Progress == True;
+		Global.Gamemode == 2;
+		Ability Cooldown(Event Player, Button(Secondary Fire)) > 0;
+	}
+
+	actions
+	{
+		Wait(2.100, Abort When False);
+		Set Ability Cooldown(Event Player, Button(Secondary Fire), 8);
+	}
+}
