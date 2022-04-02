@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-03-05"
+		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-04-02"
 		Mode Name: "Reverse Nade Tool"
 	}
 
@@ -36,7 +36,7 @@ settings
 	{
 		General
 		{
-			Quick Melee: Off
+			Quick Melee: On
 		}
 	}
 
@@ -64,6 +64,9 @@ variables
 		6: mapVersion
 		7: g_enableVerticalAimLine
 		8: g_aimAccuracyInterval
+		9: g_enableHelpText
+		10: helpTextColor
+		11: g_HelpTextSecondsPerColor
 		100: _FX
 
 	player:
@@ -77,6 +80,7 @@ variables
 		7: aim_fastCalcPosB
 		8: aim_indicatorPos
 		9: aim_vLinePos
+		10: isNewPlayerTextVisible
 		11: chasecam_bool
 		12: chasecam_chasing
 		13: chasecam_interrupt
@@ -227,6 +231,9 @@ rule("[sub] initWorkshopSettings")
 			False, 0);
 		Global.g_aimAccuracyInterval = Workshop Setting Real(Custom String("Aim Calculator"), Custom String(
 			"Step Size (Lower = more accurate)"), 0.012, 0.002, 0.064, 0);
+		Global.g_enableHelpText = Workshop Setting Toggle(Custom String("Newbie Text"), Custom String("Enable"), True, 0);
+		Global.g_HelpTextSecondsPerColor = Workshop Setting Real(Custom String("Newbie Text"), Custom String("Seconds per color"), 0.100,
+			0.120, 5, 0);
 	}
 }
 
@@ -245,6 +252,7 @@ rule("init_player")
 		Event Player.isTrajHidden = False;
 		Event Player.isTrajHidden_manual = True;
 		Event Player.aim_indicatorIconIndex = -1;
+		Event Player.isNewPlayerTextVisible = Global.g_enableHelpText;
 		Disable Game Mode HUD(Event Player);
 		Call Subroutine(initAutoAim);
 	}
@@ -317,9 +325,9 @@ rule("[sub] initHud")
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Flight Time (Approx)"),
 			Local Player.proj_simtime * Local Player.proj_predict_land_t, Right, 3.100, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
-		disabled Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Average calcs per cycle"),
-			Local Player.calcsBeforeExitAvg, Right, 3.100, Color(White), Color(White), Color(White), Visible To and String,
-			Default Visibility);
+		disabled Create HUD Text(Local Player.isHudHidden || Host Player != Local Player ? Null : Local Player, Null, Custom String(
+			"Average calcs per cycle"), Local Player.calcsBeforeExitAvg, Right, 3.100, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Custom String("Ents={0} - Texts={1}", Entity Count, Text Count), Custom String(
 			"Load now={0}, avg={1}, peak={2}", Server Load, Server Load Average, Server Load Peak), Right, 5.050, Color(White), Color(
 			Gray), Color(Gray), Visible To and String, Default Visibility);
@@ -341,6 +349,10 @@ rule("[sub] initHud")
 		Create HUD Text(!Local Player.isHudHidden && Local Player.proj_warning ? Local Player : Null, Custom String(
 			"NON-ZERO PROJECTILE RADIUS. TRAJECTORY MAY NOT MATCH"), Null, Null, Top, 30, Color(Red), Color(White), Color(White),
 			Visible To, Default Visibility);
+		Create HUD Text(Local Player.isNewPlayerTextVisible ? Local Player : Null, Icon String(Stop), Custom String(
+			"You can get started quickly:"), Custom String("First press '{0}' and then press '{1}'.", Input Binding String(Button(
+			Interact)), Input Binding String(Button(Reload))), Top, 90, Global.helpTextColor, Global.helpTextColor, Color(White),
+			Visible To String and Color, Default Visibility);
 	}
 }
 
@@ -559,6 +571,53 @@ rule("[sub] initTrajectoryUI")
 	}
 }
 
+rule("Flashing Color Changer")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.helpTextColor = Color(Violet);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Blue);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Aqua);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Turquoise);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Green);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Lime Green);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Yellow);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Orange);
+		disabled Global.helpTextColor = Color(White);
+		disabled Wait(30 * Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Orange);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Yellow);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Lime Green);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Green);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Turquoise);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Aqua);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Blue);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Global.helpTextColor = Color(Violet);
+		Wait(Global.g_HelpTextSecondsPerColor, Ignore Condition);
+		Loop;
+	}
+}
+
 disabled rule("S U B _ R O U T I N E S")
 {
 	event
@@ -608,6 +667,7 @@ rule("[sub] save_eye_and_fac")
 			Event Player.pFacingDirHidden = Vertical Facing Angle Of(Event Player) < -89 ? Up : (Vertical Facing Angle Of(Event Player)
 				> 89 ? Down : Normalize(Facing Direction Of(Event Player) + Event Player.proj_del * Up));
 		End;
+		Set Melee Enabled(Event Player, !Event Player.predictcam_bool && Vertical Facing Angle Of(Event Player) > -25);
 	}
 }
 
@@ -933,6 +993,7 @@ rule("[Keybind] toggle predictcam (melee)")
 	{
 		Is Button Held(Event Player, Button(Melee)) == True;
 		Event Player.freecam_bool == False;
+		(Vertical Facing Angle Of(Event Player) < -25 || Event Player.predictcam_bool) == True;
 	}
 
 	actions
@@ -1033,6 +1094,28 @@ rule("[Keybind] auto aim at target (reload)")
 		Small Message(Event Player, Custom String("Aim set towards target"));
 		Set Facing(Event Player, Direction From Angles(Horizontal Facing Angle Of(Event Player) + Horizontal Angle Towards(Event Player,
 			Event Player.aimTargetPos), 0 - Event Player.aim_fastCalcAngleRs), To World);
+	}
+}
+
+rule("[Keybind] mark player as having seen the intro text (reload)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Reload)) == True;
+		Event Player.isAimEnabled == True;
+		Event Player.isNewPlayerTextVisible == True;
+	}
+
+	actions
+	{
+		Event Player.isNewPlayerTextVisible = False;
 	}
 }
 
