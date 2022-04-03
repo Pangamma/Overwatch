@@ -20,7 +20,11 @@ settings
 		{
 			enabled maps
 			{
-				Dorado
+				Blizzard World
+				Eichenwalde
+				Hollywood
+				Junkertown
+				King's Row
 			}
 		}
 
@@ -63,10 +67,12 @@ variables
 		5: mapCode
 		6: mapVersion
 		7: g_enableVerticalAimLine
-		8: g_aimAccuracyInterval
 		9: g_enableHelpText
-		10: helpTextColor
-		11: g_HelpTextSecondsPerColor
+		10: g_HelpTextSecondsPerColor
+		11: g_aimAccuracyBaseStepSize
+		12: g_enableDevMode
+		20: helpTextColor
+		21: aimAccuracyStepSize
 		100: _FX
 
 	player:
@@ -204,11 +210,13 @@ rule("init")
 
 	actions
 	{
-		Disable Inspector Recording;
+		If(!Global.g_enableDevMode);
+			Disable Inspector Recording;
+		End;
 		"sphere,shaft 1.053046257,ringout 1.052807897,ringin 1.062128122"
 		Global._FX = Array(1.016, 1.053, 1.053, 1.062);
 		Global.mapCode = Custom String("M72P9V");
-		Global.mapVersion = Custom String("1.4");
+		Global.mapVersion = Custom String("1.4.2");
 		Call Subroutine(initWorkshopSettings);
 		Call Subroutine(initHeroData);
 		Call Subroutine(initHud);
@@ -229,11 +237,13 @@ rule("[sub] initWorkshopSettings")
 	{
 		Global.g_enableVerticalAimLine = Workshop Setting Toggle(Custom String("Aim Calculator"), Custom String("Enable Vertical Line"),
 			False, 0);
-		Global.g_aimAccuracyInterval = Workshop Setting Real(Custom String("Aim Calculator"), Custom String(
-			"Step Size (Lower = more accurate)"), 0.012, 0.002, 0.064, 0);
+		Global.g_aimAccuracyBaseStepSize = Workshop Setting Real(Custom String("Aim Calculator"), Custom String(
+			"Step Size (Lower = more accurate)"), 0.040, 0.020, 0.120, 0);
+		Global.aimAccuracyStepSize = Max(0.012, Global.g_aimAccuracyBaseStepSize * Count Of(All Players(All Teams)) / 10);
 		Global.g_enableHelpText = Workshop Setting Toggle(Custom String("Newbie Text"), Custom String("Enable"), True, 0);
 		Global.g_HelpTextSecondsPerColor = Workshop Setting Real(Custom String("Newbie Text"), Custom String("Seconds per color"), 0.100,
 			0.120, 5, 0);
+		Global.g_enableDevMode = Workshop Setting Toggle(Custom String("Other"), Custom String("Enable Developer Mode"), False, 0);
 	}
 }
 
@@ -290,7 +300,7 @@ rule("[sub] initHud")
 			Custom String("- change hero"), Left, 1.150, Color(White), Color(Sky Blue), Color(White), Visible To and String,
 			Default Visibility);
 		"cycle through trajectory viewer modes"
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Group Up/ {0} Spray", String("Right")),
+		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Group Up/ {0} Spray", String("Left")),
 			Custom String("- [{0}] hide trajectory / effects", Local Player.isTrajHidden_manual ? Custom String("Hidden") : Custom String(
 			"Visible")), Left, 1.200, Color(White), Color(Aqua), Color(White), Visible To and String, Default Visibility);
 		"set target"
@@ -325,12 +335,14 @@ rule("[sub] initHud")
 		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Flight Time (Approx)"),
 			Local Player.proj_simtime * Local Player.proj_predict_land_t, Right, 3.100, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
-		disabled Create HUD Text(Local Player.isHudHidden || Host Player != Local Player ? Null : Local Player, Null, Custom String(
-			"Average calcs per cycle"), Local Player.calcsBeforeExitAvg, Right, 3.100, Color(White), Color(White), Color(White),
-			Visible To and String, Default Visibility);
-		Create HUD Text(Host Player, Null, Custom String("Ents={0} - Texts={1}", Entity Count, Text Count), Custom String(
-			"Load now={0}, avg={1}, peak={2}", Server Load, Server Load Average, Server Load Peak), Right, 5.050, Color(White), Color(
-			Gray), Color(Gray), Visible To and String, Default Visibility);
+		If(Global.g_enableDevMode);
+			Create HUD Text(Local Player.isHudHidden || Host Player != Local Player ? Null : Local Player, Null, Custom String(
+				"Average calcs per cycle [stepSize={0}/10]", 10 * Global.aimAccuracyStepSize), Local Player.calcsBeforeExitAvg, Right, 6,
+				Color(Gray), Color(Gray), Color(Gray), Visible To and String, Default Visibility);
+			Create HUD Text(Host Player, Null, Custom String("Ents={0} - Texts={1}", Entity Count, Text Count), Custom String(
+				"Load now={0}, avg={1}, peak={2}", Server Load, Server Load Average, Server Load Peak), Right, 5.050, Color(White), Color(
+				Gray), Color(Gray), Visible To and String, Default Visibility);
+		End;
 		"TOP Aligned Indicators"
 		disabled Break;
 		"vertical launch angle"
@@ -790,7 +802,7 @@ rule("[sub] calcCanProjHitTarget")
 		Event Player.predictTraj__apex_t = -1 * Y Component Of(Event Player.predictTraj_launchDir)
 			* Event Player.proj_vel / Event Player.proj_g / Event Player.proj_simtime;
 		If(Event Player.proj_r == 0 && Event Player.isAimEnabled == True);
-			For Player Variable(Event Player, predictTraj__rc_t, 0, 1, Global.g_aimAccuracyInterval);
+			For Player Variable(Event Player, predictTraj__rc_t, 0, 1, Global.aimAccuracyStepSize);
 				Event Player.calcsBeforeExit += 1;
 				Event Player.predictTraj__rc_start = Evaluate Once((1 - Event Player.predictTraj__rc_t) * (1 - Event Player.predictTraj__rc_t))
 					* Event Player.predictTraj_launchPos + Evaluate Once(2 * (1 - Event Player.predictTraj__rc_t) * Event Player.predictTraj__rc_t)
@@ -799,12 +811,12 @@ rule("[sub] calcCanProjHitTarget")
 				If(Y Component Of(Event Player.predictTraj__rc_start) < Global.map_deathplane_y);
 					Break;
 				End;
-				Event Player.predictTraj__rc_end = Evaluate Once((1 - Global.g_aimAccuracyInterval - Event Player.predictTraj__rc_t) * (
-					1 - Global.g_aimAccuracyInterval - Event Player.predictTraj__rc_t)) * Event Player.predictTraj_launchPos + Evaluate Once(2 * (
-					1 - Global.g_aimAccuracyInterval - Event Player.predictTraj__rc_t) * (
-					Event Player.predictTraj__rc_t + Global.g_aimAccuracyInterval)) * Event Player.predictTraj__p1 + Evaluate Once((
-					Event Player.predictTraj__rc_t + Global.g_aimAccuracyInterval) * (
-					Event Player.predictTraj__rc_t + Global.g_aimAccuracyInterval)) * Event Player.predictTraj__p2;
+				Event Player.predictTraj__rc_end = Evaluate Once((1 - Global.aimAccuracyStepSize - Event Player.predictTraj__rc_t) * (
+					1 - Global.aimAccuracyStepSize - Event Player.predictTraj__rc_t)) * Event Player.predictTraj_launchPos + Evaluate Once(2 * (
+					1 - Global.aimAccuracyStepSize - Event Player.predictTraj__rc_t) * (
+					Event Player.predictTraj__rc_t + Global.aimAccuracyStepSize)) * Event Player.predictTraj__p1 + Evaluate Once((
+					Event Player.predictTraj__rc_t + Global.aimAccuracyStepSize) * (Event Player.predictTraj__rc_t + Global.aimAccuracyStepSize))
+					* Event Player.predictTraj__p2;
 				Event Player.predictTraj__rc_hit_pos = Ray Cast Hit Position(Event Player.predictTraj__rc_start, Event Player.predictTraj__rc_end,
 					Null, Event Player, True);
 				"hit something"
@@ -1638,7 +1650,37 @@ rule("set variables for auto aim")
 	}
 }
 
-rule("Sub: initAutoAim")
+rule("[Event] Player Joins")
+{
+	event
+	{
+		Player Joined Match;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Global.aimAccuracyStepSize = Max(0.012, Global.g_aimAccuracyBaseStepSize * Count Of(All Players(All Teams)) / 10);
+	}
+}
+
+rule("[Event] Player leaves")
+{
+	event
+	{
+		Player Left Match;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Global.aimAccuracyStepSize = Max(0.012, Global.g_aimAccuracyBaseStepSize * Count Of(All Players(All Teams)) / 10);
+	}
+}
+
+rule("[sub] initAutoAim")
 {
 	event
 	{
