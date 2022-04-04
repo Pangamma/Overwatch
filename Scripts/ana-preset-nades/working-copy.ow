@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-04-03"
+		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-04-04"
 		Mode Name: "Reverse Nade Tool"
 	}
 
@@ -20,7 +20,7 @@ settings
 		{
 			enabled maps
 			{
-				Rialto
+				Dorado
 			}
 		}
 
@@ -67,6 +67,8 @@ variables
 		10: g_HelpTextSecondsPerColor
 		11: g_aimAccuracyBaseStepSize
 		12: g_enableDevMode
+		13: g_showOtherPlayersToggleToHost
+		19: showOtherPlayers
 		20: helpTextColor
 		21: aimAccuracyStepSize
 		100: _FX
@@ -89,7 +91,6 @@ variables
 		14: chasecam_t
 		15: eye_height
 		16: aim_isLookingUp
-		17: freecam_bool
 		21: heroAbilityIcon
 		22: heroIndex
 		23: heroProjData
@@ -213,7 +214,7 @@ rule("init")
 		"sphere,shaft 1.053046257,ringout 1.052807897,ringin 1.062128122"
 		Global._FX = Array(1.016, 1.053, 1.053, 1.062);
 		Global.mapCode = Custom String("M72P9V");
-		Global.mapVersion = Custom String("1.4.3");
+		Global.mapVersion = Custom String("1.4.4");
 		Call Subroutine(initWorkshopSettings);
 		Call Subroutine(initHeroData);
 		Call Subroutine(initHud);
@@ -232,15 +233,23 @@ rule("[sub] initWorkshopSettings")
 
 	actions
 	{
+		"Aim Calc vertical line"
 		Global.g_enableVerticalAimLine = Workshop Setting Toggle(Custom String("Aim Calculator"), Custom String("Enable Vertical Line"),
 			False, 0);
+		"Aim calc step size"
 		Global.g_aimAccuracyBaseStepSize = Workshop Setting Real(Custom String("Aim Calculator"), Custom String(
 			"Step Size (Lower = more accurate)"), 0.040, 0.020, 0.120, 0);
 		Global.aimAccuracyStepSize = Max(0.012, Global.g_aimAccuracyBaseStepSize * Count Of(All Players(All Teams)) / 10);
+		"Newbie help text"
 		Global.g_enableHelpText = Workshop Setting Toggle(Custom String("Newbie Text"), Custom String("Enable"), True, 0);
 		Global.g_HelpTextSecondsPerColor = Workshop Setting Real(Custom String("Newbie Text"), Custom String("Seconds per color"), 0.100,
 			0.120, 5, 0);
+		"Dev mode"
 		Global.g_enableDevMode = Workshop Setting Toggle(Custom String("Other"), Custom String("Enable Developer Mode"), False, 0);
+		"Toggle hide/show players"
+		Global.g_showOtherPlayersToggleToHost = Workshop Setting Toggle(Custom String("Other"), Custom String(
+			"Enable hide players. (Host only)"), False, 5);
+		Global.showOtherPlayers = True;
 	}
 }
 
@@ -260,8 +269,14 @@ rule("init_player")
 		Event Player.isTrajHidden_manual = True;
 		Event Player.aim_indicatorIconIndex = -1;
 		Event Player.isNewPlayerTextVisible = Global.g_enableHelpText;
+		Event Player.chasecam_chasing = False;
+		Event Player.chasecam_bool = False;
+		Disable Movement Collision With Players(Event Player);
 		Disable Game Mode HUD(Event Player);
 		Call Subroutine(initAutoAim);
+		If(!Global.showOtherPlayers);
+			Set Invisible(Event Player, All);
+		End;
 	}
 }
 
@@ -336,6 +351,12 @@ rule("[sub] initHud")
 			Crouch))))), Custom String("- zoom in or out while in landing spot view"), Left, 1.400, Local Player.predictcam_bool ? Color(
 			Yellow) : Color(Gray), Local Player.predictcam_bool ? Color(Yellow) : Color(Gray), Local Player.predictcam_bool ? Color(White)
 			: Color(Gray), Visible To String and Color, Default Visibility);
+		"Show/hide other players"
+		Create HUD Text(Global.g_showOtherPlayersToggleToHost && !Local Player.isHudHidden && Count Of(All Players(All Teams))
+			> 1 ? Host Player : Null, Global.showOtherPlayers ? Icon String(Eye) : Custom String("     "), Custom String("{0}", String(
+			"Thank You")), Global.showOtherPlayers ? Custom String("- [On] Show other players") : Custom String(
+			"- [Off] Show other players"), Left, 1.450, Color(Orange), Color(Orange), Color(White), Visible To and String,
+			Default Visibility);
 		disabled Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Abilities ({0})", Local Player.heroAbilityIcon),
 			Null, Null, Left, 5, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
 		"RIGHT ALIGNED DEBUG"
@@ -373,13 +394,16 @@ rule("[sub] initHud")
 		Create HUD Text(!Local Player.isHudHidden && Local Player.proj_warning ? Local Player : Null, Custom String(
 			"NON-ZERO PROJECTILE RADIUS. TRAJECTORY MAY NOT MATCH"), Null, Null, Top, 30, Color(Red), Color(White), Color(White),
 			Visible To, Default Visibility);
+		"Quick start instructions"
 		Create HUD Text(Local Player.isNewPlayerTextVisible ? Local Player : Null, Icon String(Stop), Custom String(
 			"You can get started quickly:"), Custom String("First press '{0}' and then press '{1}'.", Input Binding String(Button(
 			Interact)), Input Binding String(Button(Reload))), Top, 90, Global.helpTextColor, Global.helpTextColor, Color(White),
 			Visible To String and Color, Default Visibility);
-		Create HUD Text(Local Player.isNewPlayerTextVisible ? Local Player : Null, Null, Null, Custom String(
-			"Then fire projectile to hit target."), Top, 90.100, Null, Null, Color(White), Visible To String and Color,
-			Default Visibility);
+		Create HUD Text(Local Player.isNewPlayerTextVisible ? Local Player : Null, Null, Custom String(
+			"Then fire projectile to hit target."), Null, Top, 90.100, Color(White), Color(White), Color(White),
+			Visible To String and Color, Default Visibility);
+		disabled Create HUD Text(Local Player.isNewPlayerTextVisible ? Local Player : Null, Local Player.heroAbilityIcon, Null, Null, Top, 90.150,
+			Global.helpTextColor, Color(White), Color(White), Visible To String and Color, Default Visibility);
 	}
 }
 
@@ -712,7 +736,6 @@ rule("player_calc_proj_loop")
 	{
 		Event Player.chasecam_chasing != True;
 		Event Player.trajlock_bool != True;
-		Event Player.freecam_bool != True;
 	}
 
 	actions
@@ -960,6 +983,33 @@ rule("[Keybind] trajhide (group up)")
 	}
 }
 
+rule("[Keybind] hide other players (Thanks)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.g_showOtherPlayersToggleToHost == True;
+		Event Player == Host Player;
+		(Is Communicating(Event Player, Thanks) || False) == True;
+	}
+
+	actions
+	{
+		Global.showOtherPlayers = !Global.showOtherPlayers;
+		If(Global.showOtherPlayers);
+			Set Invisible(All Players(All Teams), None);
+		Else;
+			Set Invisible(All Players(All Teams), All);
+		End;
+	}
+}
+
 rule("[Keybind] toggle hud (need healing)")
 {
 	event
@@ -1008,7 +1058,7 @@ rule("[Keybind] set/unset target (interact)")
 	}
 }
 
-rule("[Keybind] toggle predictcam (melee)")
+rule("[Keybind] toggle predictcam / cancel chase (melee)")
 {
 	event
 	{
@@ -1020,15 +1070,16 @@ rule("[Keybind] toggle predictcam (melee)")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Melee)) == True;
-		Event Player.freecam_bool == False;
 		(Event Player.aim_isLookingUp || Event Player.predictcam_bool) == True;
 	}
 
 	actions
 	{
+		"Flip camera mode if not in a chase cam."
 		If(Event Player.chasecam_chasing == False);
 			Event Player.poslock_bool = !Event Player.predictcam_bool;
 			Event Player.predictcam_bool = !Event Player.predictcam_bool;
+		"Stop a chase if chase is in progress."
 		Else;
 			Event Player.chasecam_interrupt = True;
 			Start Rule(chasecam_start, Restart Rule);
@@ -1285,7 +1336,6 @@ rule("check_abilityIndex_2")
 
 	conditions
 	{
-		disabled Is Using Ability 2(Event Player) == True;
 		Event Player.proj_override == False;
 		Is Button Held(Event Player, Button(Ability 2)) == True;
 	}
@@ -1519,11 +1569,9 @@ rule("[sub] chasecam_start")
 			"start chasing immediately after casting"
 			Chase Player Variable At Rate(Event Player, chasecam_t, Event Player.proj_predict_land_t, 1 / Event Player.proj_simtime,
 				Destination and Rate);
-			If(Event Player.chasecam_bool && !Event Player.freecam_bool);
-				disabled Event Player.predictcam_bool = False;
+			If(Event Player.chasecam_bool);
 				Event Player.chasecam_chasing = True;
 				Event Player.isTrajHidden = True;
-				Set Invisible(Event Player, All);
 				"ensures projectile correction"
 				Wait(0.016, Ignore Condition);
 				"start camera"
@@ -1539,15 +1587,51 @@ rule("[sub] chasecam_start")
 			Wait(Event Player.proj_predict_land_t * Event Player.proj_simtime + Event Player.proj_chasedelay + 1.500 - 0.016,
 				Abort When False);
 		End;
-		If(Event Player.chasecam_chasing);
-			Stop Camera(Event Player);
-		End;
-		Set Invisible(Event Player, None);
 		Event Player.isTrajHidden = False;
 		Event Player.chasecam_interrupt = False;
 		Stop Chasing Player Variable(Event Player, chasecam_t);
 		Event Player.chasecam_t = 0;
 		Event Player.chasecam_chasing = False;
+	}
+}
+
+rule("pos lock: ON")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.predictcam_bool || Event Player.chasecam_chasing) == True;
+	}
+
+	actions
+	{
+		Call Subroutine(lockpos_only);
+	}
+}
+
+rule("pos lock: OFF")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.predictcam_bool || Event Player.chasecam_chasing) == False;
+	}
+
+	actions
+	{
+		Call Subroutine(unlockpos_only);
 	}
 }
 
@@ -1562,7 +1646,7 @@ rule("predictcam_toggle_on")
 
 	conditions
 	{
-		Event Player.predictcam_bool == True;
+		(Event Player.predictcam_bool && !Event Player.chasecam_chasing) == True;
 	}
 
 	actions
@@ -1573,7 +1657,6 @@ rule("predictcam_toggle_on")
 			* Event Player.proj_predict_land_t * Event Player.predictcam_dist * Event Player.proj_p1 + (
 			Event Player.proj_predict_land_t * Event Player.predictcam_dist) ^ 2 * Event Player.proj_p2,
 			Event Player.proj_predict_land_pos, 10);
-		Call Subroutine(lockpos_only);
 	}
 }
 
@@ -1588,13 +1671,12 @@ rule("predictcam_toggle_off")
 
 	conditions
 	{
-		Event Player.predictcam_bool == False;
+		(!Event Player.predictcam_bool && !Event Player.chasecam_chasing) == True;
 	}
 
 	actions
 	{
 		Stop Camera(Event Player);
-		Call Subroutine(unlockpos_only);
 	}
 }
 
@@ -1659,10 +1741,12 @@ rule("set variables for auto aim")
 			Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos)))), 100, Destination and Rate);
 		Chase Player Variable At Rate(Event Player, aim_distToIndicator, Distance Between(Eye Position(Event Player),
 			Event Player.aim_indicatorPos), 100, Destination and Rate);
-		Chase Player Variable At Rate(Event Player, aim_vLinePos, Eye Position(Event Player) + Vector(5 * Sine From Degrees(
-			Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos))), 0,
-			5 * Cosine From Degrees(Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player),
-			Event Player.aimTargetPos)))), 100, Destination and Rate);
+		If(Global.g_enableVerticalAimLine == True);
+			Chase Player Variable At Rate(Event Player, aim_vLinePos, Eye Position(Event Player) + Vector(5 * Sine From Degrees(
+				Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player), Event Player.aimTargetPos))), 0,
+				5 * Cosine From Degrees(Horizontal Angle From Direction(Direction Towards(Eye Position(Event Player),
+				Event Player.aimTargetPos)))), 100, Destination and Rate);
+		End;
 	}
 }
 
