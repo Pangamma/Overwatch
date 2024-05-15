@@ -290,42 +290,42 @@ rule("[sub] initHud")
 
 	actions
 	{
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Code: {0}", Global.mapCode), Custom String(
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Custom String("Code: {0}", Global.mapCode), Custom String(
 			"Reverse Nade Tool ({0})", Global.mapVersion), Custom String("by Pangamma"), Left, -3, Color(Yellow), Color(White), Color(
 			Aqua), Visible To, Default Visibility);
-		Create HUD Text(Local Player.isHudHidden ? Local Player : Null, Null, Null, Custom String("{0} {1}", Global.mapCode,
+		Create HUD Text(Local Player.isHudHidden && Entity Exists(Local Player)? Local Player : Null, Null, Null, Custom String("{0} {1}", Global.mapCode,
 			Global.mapVersion), Left, -2, Color(White), Color(White), Color(Yellow), Visible To, Default Visibility);
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Instructions"), Null, Null, Left, -1, Color(White),
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Custom String("Instructions"), Null, Null, Left, -1, Color(White),
 			Color(White), Color(White), Visible To and String, Default Visibility);
 		"LEFT ALIGNED INSTRUCTIONS"
 		disabled Break;
 		"Toggle hud"
-		Create HUD Text(All Players(All Teams), Local Player.isHudHidden ? Custom String("     ") : Icon String(Eye), Custom String(
+		Create HUD Text(Entity Exists(Local Player) ? Local Player : Null, Local Player.isHudHidden ? Custom String("     ") : Icon String(Eye), Custom String(
 			"Need Healing/ {0} Spray", String("Down")), Custom String("- [{0}] Toggle HUD", Local Player.isHudHidden ? Custom String("Off")
 			: Custom String("On")), Left, 1.050, Custom Color(170, 125, 255, 255), Custom Color(170, 125, 255, 255), Color(White),
 			Visible To and String, Default Visibility);
 		"Chase cam"
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Local Player.chasecam_bool ? Icon String(Eye) : Custom String(
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.chasecam_bool ? Icon String(Eye) : Custom String(
 			"     "), Custom String("Ultimate {0}/ {1} Spray", String("Status"), String("Up")), Custom String(
 			"- [{0}] toggle chase camera", Local Player.chasecam_bool ? Custom String("On") : Custom String("Off")), Left, 1.100, Color(
 			Blue), Color(Blue), Color(White), Visible To and String, Default Visibility);
 		"change hero"
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Hero Icon String(Hero Of(Local Player)), Custom String(
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Hero Icon String(Hero Of(Local Player)), Custom String(
 			"Acknowledge/ {0} Spray", String("Right")), Custom String("- change hero"), Left, 1.150, Color(Sky Blue), Color(Sky Blue),
 			Color(White), Visible To and String, Default Visibility);
 		"cycle through trajectory viewer modes"
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Local Player.isTrajHidden_manual ? Custom String("     ")
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.isTrajHidden_manual ? Custom String("     ")
 			: Icon String(Eye), Custom String("Group Up/ {0} Spray", String("Left")), Custom String("- [{0}] toggle trajectory / effects",
 			Local Player.isTrajHidden_manual ? Custom String("Off") : Custom String("On")), Left, 1.200, Color(Aqua), Color(Aqua), Color(
 			White), Visible To and String, Default Visibility);
 		"set target"
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0,
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0,
 			0, 0) ? Icon String(Flag) : Custom String("     "), String("{0} {1}", Button(Interact), String("({0})", Input Binding String(
 			Button(Interact)))), Custom String("- [{0}] set/unset target position",
 			Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0, 0, 0) ? Custom String("Set") : Custom String("Unset")),
 			Left, 1.250, Color(Turquoise), Color(Turquoise), Color(White), Visible To and String, Default Visibility);
 		"Auto aim at target."
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Local Player.isAimEnabled ? Ability Icon String(Hero(Soldier: 76),
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.isAimEnabled ? Ability Icon String(Hero(Soldier: 76),
 			Button(Ultimate)) : Custom String("      "), String("{0} {1}", Button(Reload), String("({0})", Input Binding String(Button(
 			Reload)))), Custom String("- Auto aim towards target"), Left, 1.260, Local Player.isAimEnabled ? Color(Green) : Color(Gray),
 			Local Player.isAimEnabled ? Color(Green) : Color(Gray), Local Player.isAimEnabled ? Color(White) : Color(Gray),
@@ -391,7 +391,8 @@ rule("[sub] initHud")
 			!Local Player.predictTraj_canHitTarget && !Local Player.isHudHidden && Local Player.isAimEnabled ? Local Player : Null,
 			Icon String(Warning), Custom String("Your current target"), Custom String("cannot be reached."), Top, 20, Color(Red), Color(
 			Orange), Color(Orange), Visible To and String, Default Visibility);
-		Create HUD Text(!Local Player.isHudHidden && Local Player.proj_warning ? Local Player : Null, Custom String(
+		"Non zero blah blah blah"
+		disabled Create HUD Text(!Local Player.isHudHidden && Local Player.proj_warning ? Local Player : Null, Custom String(
 			"NON-ZERO PROJECTILE RADIUS. TRAJECTORY MAY NOT MATCH"), Null, Null, Top, 30, Color(Red), Color(White), Color(White),
 			Visible To, Default Visibility);
 		"Quick start instructions"
