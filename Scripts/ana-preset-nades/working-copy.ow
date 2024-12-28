@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2022-04-04"
+		Description: "Find pre-set nade locations more efficiently. By Pangamma. Last Update: 2024-12-23"
 		Mode Name: "Reverse Nade Tool"
 	}
 
@@ -20,7 +20,7 @@ settings
 		{
 			enabled maps
 			{
-				Dorado
+				Hollywood 972777519512068153 972777519512068154
 			}
 		}
 
@@ -214,7 +214,7 @@ rule("init")
 		"sphere,shaft 1.053046257,ringout 1.052807897,ringin 1.062128122"
 		Global._FX = Array(1.016, 1.053, 1.053, 1.062);
 		Global.mapCode = Custom String("M72P9V");
-		Global.mapVersion = Custom String("1.4.4");
+		Global.mapVersion = Custom String("1.5.0");
 		Call Subroutine(initWorkshopSettings);
 		Call Subroutine(initHeroData);
 		Call Subroutine(initHud);
@@ -290,51 +290,61 @@ rule("[sub] initHud")
 
 	actions
 	{
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Custom String("Code: {0}", Global.mapCode), Custom String(
-			"Reverse Nade Tool ({0})", Global.mapVersion), Custom String("by Pangamma"), Left, -3, Color(Yellow), Color(White), Color(
-			Aqua), Visible To, Default Visibility);
-		Create HUD Text(Local Player.isHudHidden && Entity Exists(Local Player)? Local Player : Null, Null, Null, Custom String("{0} {1}", Global.mapCode,
-			Global.mapVersion), Left, -2, Color(White), Color(White), Color(Yellow), Visible To, Default Visibility);
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Custom String("Instructions"), Null, Null, Left, -1, Color(White),
-			Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Custom String("Code: {0}",
+			Global.mapCode), Custom String("Reverse Nade Tool ({0})                                  ", Global.mapVersion), Custom String(
+			"by Pangamma"), Left, -3, Color(Yellow), Color(White), Color(Aqua), Visible To, Default Visibility);
+		Create HUD Text(Local Player.isHudHidden && Entity Exists(Local Player) ? Local Player : Null, Null, Null, Custom String("{0} {1}",
+			Global.mapCode, Global.mapVersion), Left, -2, Color(White), Color(White), Color(Yellow), Visible To, Default Visibility);
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Null, Null, Custom String(
+			"Discord: https://bit.ly/OW-TRICKSHOTS"), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
+			Default Visibility);
 		"LEFT ALIGNED INSTRUCTIONS"
 		disabled Break;
 		"Toggle hud"
-		Create HUD Text(Entity Exists(Local Player) ? Local Player : Null, Local Player.isHudHidden ? Custom String("     ") : Icon String(Eye), Custom String(
-			"Need Healing/ {0} Spray", String("Down")), Custom String("- [{0}] Toggle HUD", Local Player.isHudHidden ? Custom String("Off")
-			: Custom String("On")), Left, 1.050, Custom Color(170, 125, 255, 255), Custom Color(170, 125, 255, 255), Color(White),
-			Visible To and String, Default Visibility);
+		Create HUD Text(Entity Exists(Local Player) ? Local Player : Null, Local Player.isHudHidden ? Custom String("     ") : Icon String(
+			Eye), Custom String("Need Healing/ {0} Spray", String("Down")), Local Player.isHudHidden ? Custom String(
+			"- [Off] Toggle HUD                                                         ") : Custom String(
+			"- [On] Toggle HUD                                                            "), Left, 1.050, Custom Color(170, 125, 255,
+			255), Custom Color(170, 125, 255, 255), Color(White), Visible To and String, Default Visibility);
 		"Chase cam"
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.chasecam_bool ? Icon String(Eye) : Custom String(
-			"     "), Custom String("Ultimate {0}/ {1} Spray", String("Status"), String("Up")), Custom String(
-			"- [{0}] toggle chase camera", Local Player.chasecam_bool ? Custom String("On") : Custom String("Off")), Left, 1.100, Color(
-			Blue), Color(Blue), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player,
+			Local Player.chasecam_bool ? Icon String(Eye) : Custom String("     "), Custom String("Ultimate {0}/ {1} Spray", String(
+			"Status"), String("Up")), Local Player.chasecam_bool ? Custom String(
+			"- [On] toggle chase camera                                    ") : Custom String(
+			"- [Off] toggle chase camera                                   "), Left, 1.100, Color(Blue), Color(Blue), Color(White),
+			Visible To and String, Default Visibility);
 		"change hero"
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Hero Icon String(Hero Of(Local Player)), Custom String(
-			"Acknowledge/ {0} Spray", String("Right")), Custom String("- change hero"), Left, 1.150, Color(Sky Blue), Color(Sky Blue),
-			Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Hero Icon String(Hero Of(
+			Local Player)), Custom String("Acknowledge/ {0} Spray                                                                        ",
+			String("Right")), Custom String("- change hero [{0}]", Local Player.heroAbilityIcon), Left, 1.150, Color(Sky Blue), Color(
+			Sky Blue), Color(White), Visible To and String, Default Visibility);
 		"cycle through trajectory viewer modes"
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.isTrajHidden_manual ? Custom String("     ")
-			: Icon String(Eye), Custom String("Group Up/ {0} Spray", String("Left")), Custom String("- [{0}] toggle trajectory / effects",
-			Local Player.isTrajHidden_manual ? Custom String("Off") : Custom String("On")), Left, 1.200, Color(Aqua), Color(Aqua), Color(
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player,
+			Local Player.isTrajHidden_manual ? Custom String("     ") : Icon String(Eye), Custom String("Group Up/ {0} Spray", String(
+			"Left")), Local Player.isTrajHidden_manual ? Custom String("- [Off] toggle trajectory / effects                   ")
+			: Custom String("- [On] toggle trajectory / effects                     "), Left, 1.200, Color(Aqua), Color(Aqua), Color(
 			White), Visible To and String, Default Visibility);
 		"set target"
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0,
-			0, 0) ? Icon String(Flag) : Custom String("     "), String("{0} {1}", Button(Interact), String("({0})", Input Binding String(
-			Button(Interact)))), Custom String("- [{0}] set/unset target position",
-			Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0, 0, 0) ? Custom String("Set") : Custom String("Unset")),
-			Left, 1.250, Color(Turquoise), Color(Turquoise), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player,
+			Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0, 0, 0) ? Icon String(Flag) : Custom String("     "), String(
+			"{0} {1}", Button(Interact), String("({0})", Input Binding String(Button(Interact)))),
+			Local Player.isAimEnabled && Local Player.aimTargetPos != Vector(0, 0, 0) ? Custom String(
+			"- [Set] set/unset target position                        ") : Custom String(
+			"- [Unset] set/unset target position                  "), Left, 1.250, Color(Turquoise), Color(Turquoise), Color(White),
+			Visible To and String, Default Visibility);
 		"Auto aim at target."
-		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player, Local Player.isAimEnabled ? Ability Icon String(Hero(Soldier: 76),
-			Button(Ultimate)) : Custom String("      "), String("{0} {1}", Button(Reload), String("({0})", Input Binding String(Button(
-			Reload)))), Custom String("- Auto aim towards target"), Left, 1.260, Local Player.isAimEnabled ? Color(Green) : Color(Gray),
-			Local Player.isAimEnabled ? Color(Green) : Color(Gray), Local Player.isAimEnabled ? Color(White) : Color(Gray),
+		Create HUD Text(Local Player.isHudHidden || !Entity Exists(Local Player) ? Null : Local Player,
+			Local Player.isAimEnabled ? Ability Icon String(Hero(Soldier: 76), Button(Ultimate)) : Custom String("      "), String(
+			"{0} {1}", Button(Reload), String("({0})", Input Binding String(Button(Reload)))), Custom String(
+			"- Auto aim towards target                                     "), Left, 1.260, Local Player.isAimEnabled ? Color(Green)
+			: Color(Gray), Local Player.isAimEnabled ? Color(Green) : Color(Gray), Local Player.isAimEnabled ? Color(White) : Color(Gray),
 			Visible To String and Color, Default Visibility);
 		"Target cam"
 		Create HUD Text(Local Player.isHudHidden || Local Player.chasecam_chasing ? Null : Local Player,
 			Local Player.predictcam_bool ? Ability Icon String(Hero(Mercy), Button(Ability 2)) : Custom String("     "), String("{0} {1}",
-			Button(Melee), String("({0})", Input Binding String(Button(Melee)))), Custom String("- [{0}] toggle landing spot view",
-			Local Player.predictcam_bool ? Custom String("On") : Custom String("Off")), Left, 1.350,
+			Button(Melee), String("({0})", Input Binding String(Button(Melee)))), Local Player.predictcam_bool ? Custom String(
+			"- [On] toggle landing spot view                           ") : Custom String(
+			"- [Off] toggle landing spot view                         "), Left, 1.350,
 			Local Player.predictcam_bool || Local Player.aim_isLookingUp ? Color(Lime Green) : Color(Gray),
 			Local Player.predictcam_bool || Local Player.aim_isLookingUp ? Color(Lime Green) : Color(Gray),
 			Local Player.predictcam_bool || Local Player.aim_isLookingUp ? Color(White) : Color(Gray), Visible To String and Color,
@@ -357,18 +367,16 @@ rule("[sub] initHud")
 			"Thank You")), Global.showOtherPlayers ? Custom String("- [On] Show other players") : Custom String(
 			"- [Off] Show other players"), Left, 1.450, Color(Orange), Color(Orange), Color(White), Visible To and String,
 			Default Visibility);
-		disabled Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Custom String("Abilities ({0})", Local Player.heroAbilityIcon),
-			Null, Null, Left, 5, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
 		"RIGHT ALIGNED DEBUG"
 		disabled Break;
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Proj Speed"), Distance Between(2 * (
-			1 - Local Player.chasecam_t) * (Local Player.proj_p1 - Local Player.proj_p0) + 2 * Local Player.chasecam_t * (
-			Local Player.proj_p2 - Local Player.proj_p1), Vector(0, 0, 0)) / Local Player.proj_simtime, Right, 3.050, Color(White), Color(
-			White), Color(White), Visible To and String, Default Visibility);
-		Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Flight Time (Approx)"),
-			Local Player.proj_simtime * Local Player.proj_predict_land_t, Right, 3.100, Color(White), Color(White), Color(White),
-			Visible To and String, Default Visibility);
 		If(Global.g_enableDevMode);
+			Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Proj Speed"), Distance Between(2 * (
+				1 - Local Player.chasecam_t) * (Local Player.proj_p1 - Local Player.proj_p0) + 2 * Local Player.chasecam_t * (
+				Local Player.proj_p2 - Local Player.proj_p1), Vector(0, 0, 0)) / Local Player.proj_simtime, Right, 3.050, Color(White), Color(
+				White), Color(White), Visible To and String, Default Visibility);
+			Create HUD Text(Local Player.isHudHidden ? Null : Local Player, Null, Custom String("Flight Time (Approx)"),
+				Local Player.proj_simtime * Local Player.proj_predict_land_t, Right, 3.100, Color(White), Color(White), Color(White),
+				Visible To and String, Default Visibility);
 			Create HUD Text(Local Player.isHudHidden || Host Player != Local Player ? Null : Local Player, Null, Custom String(
 				"Average calcs per cycle [stepSize={0}/10]", 10 * Global.aimAccuracyStepSize), Local Player.calcsBeforeExitAvg, Right, 6,
 				Color(Gray), Color(Gray), Color(Gray), Visible To and String, Default Visibility);
@@ -418,8 +426,9 @@ rule("[sub] load heroData")
 
 	actions
 	{
-		Global.heroList = Array(Hero(Ana), Hero(Junkrat), Hero(Baptiste), Hero(Orisa), Hero(Zarya), Hero(Sombra), Hero(Ashe), Hero(Tracer),
-			Hero(Cassidy), Hero(Mei), Hero(Torbjörn), Hero(Hanzo), Hero(Sigma), Hero(Widowmaker));
+		Global.heroList = Array(Hero(Ana), Hero(Junkrat), Hero(Baptiste), Hero(Zarya), Hero(Sombra), Hero(Ashe), Hero(Tracer), Hero(
+			Cassidy), Hero(Mei), Hero(Torbjörn), Hero(Hanzo), Hero(Sigma), Hero(Widowmaker), Hero(Bastion), Hero(Ramattra));
+		"gravity, velocity, proj_delay, proj_simtime, radius?, cast delay, chase delay, proj override"
 		Global.heroData = Array();
 		"Ana"
 		Global.heroData[0] = Array(Array(Null, Null, Null, Null, Array(-9.840, 30, 0, 7, 0, 0, 0.350, False)), 4, Array(4, 0, 0), False);
@@ -429,38 +438,41 @@ rule("[sub] load heroData")
 		"Baptiste"
 		Global.heroData[2] = Array(Array(Null, Array(-20.100, 60, 0.007, 7, 0, 0, 0.100, False), Null, Null, Array(-20.100, 60, 0.007, 7,
 			0, 0, 0.100, False)), 1, Array(3, 0, 6.500), True);
-		"Orisa"
-		Global.heroData[3] = Array(Array(Null, Null, Null, Null, Array(-9.840, 25, 0, 7, 0, 0.128, 0.400, False)), 4, Array(0, 0, 0),
-			True);
 		"Zarya"
-		Global.heroData[4] = Array(Array(Null, Array(-9.840, 25, 0.100, 7, 0, 0, 0.500, False), Array(-9.840, 25, 0.100, 7, 0, 0, 0.500,
+		Global.heroData[3] = Array(Array(Null, Array(-9.840, 25, 0.100, 7, 0, 0, 0.500, False), Array(-9.840, 25, 0.100, 7, 0, 0, 0.500,
 			False), Null, Null), 1, Array(2.500, 6, 0), False);
 		"Sombra"
-		Global.heroData[5] = Array(Array(Null, Null, Null, Null, Array(-20.200, 25, 0.090, 5, 0, 0.096, 0.200, False)), 4, Array(15, 0, 0),
+		Global.heroData[4] = Array(Array(Null, Null, Null, Null, Array(-20.200, 25, 0.090, 5, 0, 0.096, 0.200, False)), 4, Array(15, 0, 0),
 			True);
 		"Ashe"
-		Global.heroData[6] = Array(Array(Null, Null, Null, Null, Array(-8.030, 25, 0.070, 7, 0, 0.140, 0.400, False)), 4, Array(5, 0, 0),
+		Global.heroData[5] = Array(Array(Null, Null, Null, Null, Array(-8.030, 25, 0.070, 7, 0, 0.140, 0.400, False)), 4, Array(5, 0, 0),
 			True);
 		"Tracer"
-		Global.heroData[7] = Array(Array(Null, Null, Array(-30.800, 15, 0.190, 2, 0, 0.144, 0.150, False), Null, Null), 2, Array(5, 0, 0),
+		Global.heroData[6] = Array(Array(Null, Null, Array(-30.800, 15, 0.190, 2, 0, 0.144, 0.150, False), Null, Null), 2, Array(5, 0, 0),
 			False);
 		"Cassidy"
-		Global.heroData[8] = Array(Array(Null, Null, Array(-10, 4.200, 0.577, 4, 0, 0, 0.300, False), Null, Array(-9.840, 30, 0, 0.233, 0,
+		Global.heroData[7] = Array(Array(Null, Null, Array(-10, 4.200, 0.577, 4, 0, 0, 0.300, False), Null, Array(-9.840, 30, 0, 0.233, 0,
 			0, 0.100, False)), 4, Array(3, 0, 0), False);
 		"Mei"
-		Global.heroData[9] = Array(Array(Null, Null, Array(-9.900, 20, 0.090, 7, 0, 0.484, 0.600, False), Null, Null), 2, Array(10, 0, 0),
+		Global.heroData[8] = Array(Array(Null, Null, Array(-9.900, 20, 0.090, 7, 0, 0.484, 0.600, False), Null, Null), 2, Array(10, 0, 0),
 			False);
 		"Torbjörn"
-		Global.heroData[10] = Array(Array(Array(-9.810, 70, 0.015, 15, 0, 0, 0.100, True), Null, Array(-30.050, 40, 0, 5, 0, 0, 0.100,
+		Global.heroData[9] = Array(Array(Array(-9.810, 70, 0.015, 15, 0, 0, 0.100, True), Null, Array(-30.050, 40, 0, 5, 0, 0, 0.100,
 			True), Array(-20, 17, 0, 4, 0, 0.048, 0.100, True), Null), 0, Array(2.500, 40, 0), True);
 		"Hanzo"
-		Global.heroData[11] = Array(Array(Array(-9.815, 110, 0, 15, 0, 0, 0.032, True), Null, Null, Null, Array(-9.815, 110, 0, 15, 0, 0,
+		Global.heroData[10] = Array(Array(Array(-9.815, 110, 0, 15, 0, 0, 0.032, True), Null, Null, Null, Array(-9.815, 110, 0, 15, 0, 0,
 			0.032, True)), 0, Array(0, 9, 0), False);
 		"Sigma"
-		Global.heroData[12] = Array(Array(Array(-5.954, 49.700, 0, 0.429, 0, 0, 0.048, False), Null, Null, Null, Array(-18.350, 37.400,
+		Global.heroData[11] = Array(Array(Array(-5.954, 49.700, 0, 0.429, 0, 0, 0.048, False), Null, Null, Null, Array(-18.350, 37.400,
 			0.100, 6, 0, 0.640, 0.256, False)), 4, Array(2.500, 3, 0), True);
 		"Widowmaker"
-		Global.heroData[13] = Array(Array(Null, Null, Null, Null, Array(-9.840, 20, 0, 7, 0, 0.192, 0.160, False)), 4, Array(3, 0, 0),
+		Global.heroData[12] = Array(Array(Null, Null, Null, Null, Array(-9.840, 20, 0, 7, 0, 0.192, 0.160, False)), 4, Array(3, 0, 0),
+			True);
+		"Bastion - The gravity may be wrong."
+		Global.heroData[13] = Array(Array(Null, Array(-10.500, 40, 0, 10, 0, 0.192, 0.160, False), Null, Null, Null), 1, Array(4, 0, 0),
+			False);
+		"Ramattra"
+		Global.heroData[14] = Array(Array(Null, Null, Null, Null, Array(-9.650, 30, 0, 8, 0, 0.192, 0.160, False)), 4, Array(2, 4, 0),
 			True);
 		Global.data = Array(Global.heroList, Global.heroData);
 	}
